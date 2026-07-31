@@ -1,0 +1,38 @@
+{
+  "title": "Hourly Sensor",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Create an hourly sensor",
+        "description": "The value is calculated from completed clock hours and updated at the start of every hour.",
+        "data": {
+          "name": "Name",
+          "source_entity": "Source sensor",
+          "aggregation": "Statistic",
+          "hours": "Rolling window (hours)",
+          "precision": "Decimal places"
+        },
+        "data_description": {
+          "aggregation": "Change handles cumulative meters and resets. Sum adds every reported sample; average, minimum, maximum and last operate on the reported samples.",
+          "hours": "Between 1 and 168 completed clock hours."
+        }
+      }
+    },
+    "error": {
+      "entity_not_found": "The selected entity does not exist.",
+      "source_not_numeric": "The selected entity does not currently have a numeric state."
+    }
+  },
+  "selector": {
+    "aggregation": {
+      "options": {
+        "change": "Change (cumulative meter)",
+        "sum": "Sum of samples",
+        "average": "Average",
+        "minimum": "Minimum",
+        "maximum": "Maximum",
+        "last": "Last value"
+      }
+    }
+  }
+}

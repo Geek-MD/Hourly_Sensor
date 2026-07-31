@@ -1,0 +1,38 @@
+{
+  "title": "Sensor horario",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Crear un sensor horario",
+        "description": "El valor se calcula usando horas naturales completas y se actualiza al inicio de cada hora.",
+        "data": {
+          "name": "Nombre",
+          "source_entity": "Sensor de origen",
+          "aggregation": "Estadística",
+          "hours": "Ventana móvil (horas)",
+          "precision": "Decimales"
+        },
+        "data_description": {
+          "aggregation": "Cambio admite contadores acumulativos y reinicios. Suma agrega cada muestra recibida; promedio, mínimo, máximo y último operan sobre las muestras recibidas.",
+          "hours": "Entre 1 y 168 horas naturales completas."
+        }
+      }
+    },
+    "error": {
+      "entity_not_found": "La entidad seleccionada no existe.",
+      "source_not_numeric": "La entidad seleccionada no tiene actualmente un estado numérico."
+    }
+  },
+  "selector": {
+    "aggregation": {
+      "options": {
+        "change": "Cambio (contador acumulativo)",
+        "sum": "Suma de muestras",
+        "average": "Promedio",
+        "minimum": "Mínimo",
+        "maximum": "Máximo",
+        "last": "Último valor"
+      }
+    }
+  }
+}
