@@ -1,0 +1,14 @@
+{
+  "domain": "hourly_sensor",
+  "name": "Hourly Sensor",
+  "codeowners": [
+    "@Geek-MD"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/Geek-MD/Hourly_Sensor",
+  "integration_type": "helper",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/Geek-MD/Hourly_Sensor/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}
