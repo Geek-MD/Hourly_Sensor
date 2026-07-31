@@ -19,4 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Contextual rolling units such as `mm/h` and `mm/12h`.
 - Average, minimum, and maximum attributes from intermediate source samples.
 - English and Spanish translations.
+- Geek-MD family brand icon and logo for HACS and Home Assistant.
 - HACS metadata and Ruff, mypy, pytest, hassfest, and HACS workflows.
+- Python 3.14.2 and Node.js 24-compatible GitHub Actions.

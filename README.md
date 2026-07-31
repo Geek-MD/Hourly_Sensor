@@ -10,6 +10,10 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
 
+<p align="center">
+  <img src="custom_components/hourly_sensor/brand/logo.png" width="220" alt="Hourly Sensor logo">
+</p>
+
 # Hourly Sensor
 
 **Hourly Sensor** is a custom Home Assistant integration that creates rolling
@@ -42,6 +46,7 @@ updated on the hour and keeps only the requested number of completed clock hours
 |-------------|-----------------|
 | Home Assistant | 2026.7.0 |
 | HACS (optional) | 1.6.0 |
+| Python (development/CI) | 3.14.2 |
 
 ## 📦 Installation
 
