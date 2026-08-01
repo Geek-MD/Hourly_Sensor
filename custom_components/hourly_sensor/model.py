@@ -106,7 +106,7 @@ class HourlyAccumulator:
         ]
         selected = complete[-self.window_hours :]
         if not selected:
-            return None
+            return 0.0
 
         if self.aggregation == AGGREGATION_CHANGE:
             return sum(self._change(bucket.samples) for bucket in selected)
