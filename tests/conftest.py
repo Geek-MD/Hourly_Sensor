@@ -10,4 +10,5 @@ package = ModuleType(PACKAGE)
 package.__path__ = [
     str(Path(__file__).parents[1] / "custom_components" / "hourly_sensor")
 ]
+package.HourlySensorConfigEntry = object
 sys.modules[PACKAGE] = package

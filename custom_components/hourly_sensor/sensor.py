@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device import async_entity_id_to_device
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
@@ -47,13 +51,6 @@ class HourlySensorEntity(SensorEntity):
         self._attr_unique_id = entry.entry_id
         self._attr_suggested_display_precision = self._precision
 
-        source_state = hass.states.get(self._source_entity)
-        if source_state is not None:
-            self._attr_native_unit_of_measurement = source_state.attributes.get(
-                "unit_of_measurement"
-            )
-            self._attr_device_class = source_state.attributes.get("device_class")
-
         # Home Assistant 2026.8+ helper integrations link entities directly to
         # the source device instead of merging config entries through DeviceInfo.
         self.device_entry = async_entity_id_to_device(hass, self._source_entity)
@@ -74,6 +71,21 @@ class HourlySensorEntity(SensorEntity):
         """Return the rolling statistic."""
         value = self._controller.accumulator.value
         return None if value is None else round(value, self._precision)
+
+    @property
+    def native_unit_of_measurement(self) -> str | None:
+        """Return the source sensor's current unit of measurement."""
+        return cast(str | None, self._source_attribute("unit_of_measurement"))
+
+    @property
+    def device_class(self) -> SensorDeviceClass | None:
+        """Return the source sensor's current device class."""
+        return cast(SensorDeviceClass | None, self._source_attribute("device_class"))
+
+    @property
+    def state_class(self) -> SensorStateClass | None:
+        """Return the source sensor's current state class."""
+        return cast(SensorStateClass | None, self._source_attribute("state_class"))
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -99,3 +111,8 @@ class HourlySensorEntity(SensorEntity):
                 }
             )
         return attributes
+
+    def _source_attribute(self, attribute: str) -> Any:
+        """Return an attribute from the source state when it is available."""
+        source_state = self.hass.states.get(self._source_entity)
+        return None if source_state is None else source_state.attributes.get(attribute)
