@@ -52,10 +52,14 @@ class HourlySensorConfigFlow(ConfigFlow, domain=DOMAIN):
             else:
                 try:
                     float(state.state)
-                except (TypeError, ValueError):
+                except TypeError, ValueError:
                     errors[CONF_SOURCE_ENTITY] = "source_not_numeric"
 
             if not errors:
+                # Number selectors return floats; persist discrete settings as
+                # integers so config entries retain their declared types.
+                user_input[CONF_HOURS] = int(user_input[CONF_HOURS])
+                user_input[CONF_PRECISION] = int(user_input[CONF_PRECISION])
                 return self.async_create_entry(
                     title=user_input[CONF_NAME], data=user_input
                 )
@@ -81,9 +85,7 @@ class HourlySensorConfigFlow(ConfigFlow, domain=DOMAIN):
                         mode=NumberSelectorMode.BOX,
                     )
                 ),
-                vol.Required(
-                    CONF_PRECISION, default=DEFAULT_PRECISION
-                ): NumberSelector(
+                vol.Required(CONF_PRECISION, default=DEFAULT_PRECISION): NumberSelector(
                     NumberSelectorConfig(
                         min=MIN_PRECISION,
                         max=MAX_PRECISION,
@@ -93,6 +95,4 @@ class HourlySensorConfigFlow(ConfigFlow, domain=DOMAIN):
                 ),
             }
         )
-        return self.async_show_form(
-            step_id="user", data_schema=schema, errors=errors
-        )
+        return self.async_show_form(step_id="user", data_schema=schema, errors=errors)

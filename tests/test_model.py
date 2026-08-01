@@ -73,6 +73,17 @@ def test_storage_round_trip() -> None:
     assert restored.value == 2
 
 
+def test_number_selector_float_window_is_normalized() -> None:
+    """A NumberSelector float can be used to select the completed window."""
+    accumulator = HourlyAccumulator(1.0, AGGREGATION_CHANGE)  # type: ignore[arg-type]
+    accumulator.add_sample(_moment(10), 10)
+    accumulator.add_sample(_moment(10, 30), 12)
+    accumulator.add_sample(_moment(11), 12)
+
+    assert accumulator.window_hours == 1
+    assert accumulator.value == 2
+
+
 def test_intermediate_sample_statistics_ignore_partial_hour() -> None:
     """Attribute statistics use only completed-hour intermediate samples."""
     accumulator = HourlyAccumulator(1, AGGREGATION_CHANGE)

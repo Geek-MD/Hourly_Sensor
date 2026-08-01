@@ -52,6 +52,12 @@ class HourlyAccumulator:
     aggregation: str
     buckets: list[HourBucket] = field(default_factory=list)
 
+    def __post_init__(self) -> None:
+        """Normalize values supplied by Home Assistant selectors."""
+        # NumberSelector serializes its result as a float, even when configured
+        # with a step of one.  Keep the model's window usable as a slice index.
+        self.window_hours = int(self.window_hours)
+
     @classmethod
     def from_dict(
         cls, raw: dict[str, Any], *, window_hours: int, aggregation: str
