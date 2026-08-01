@@ -84,6 +84,18 @@ def test_number_selector_float_window_is_normalized() -> None:
     assert accumulator.value == 2
 
 
+@pytest.mark.parametrize("window_hours", [1, 2, 12, 168])
+def test_empty_completed_window_returns_zero(window_hours: int) -> None:
+    """A window without completed data has a numeric zero state."""
+    accumulator = HourlyAccumulator(window_hours, AGGREGATION_CHANGE)
+
+    assert accumulator.value == 0
+
+    accumulator.add_sample(_moment(10), 10)
+
+    assert accumulator.value == 0
+
+
 def test_intermediate_sample_statistics_ignore_partial_hour() -> None:
     """Attribute statistics use only completed-hour intermediate samples."""
     accumulator = HourlyAccumulator(1, AGGREGATION_CHANGE)

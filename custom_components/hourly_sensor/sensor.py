@@ -11,8 +11,6 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import HourlySensorConfigEntry
 from .const import (
-    AGGREGATION_CHANGE,
-    AGGREGATION_SUM,
     CONF_AGGREGATION,
     CONF_HOURS,
     CONF_NAME,
@@ -51,19 +49,10 @@ class HourlySensorEntity(SensorEntity):
 
         source_state = hass.states.get(self._source_entity)
         if source_state is not None:
-            source_unit = source_state.attributes.get("unit_of_measurement")
-            if source_unit is not None and self._aggregation in (
-                AGGREGATION_CHANGE,
-                AGGREGATION_SUM,
-            ):
-                period = "h" if self._hours == 1 else f"{self._hours}h"
-                self._attr_native_unit_of_measurement = f"{source_unit}/{period}"
-                # A custom rolling-window unit may not be accepted by the
-                # source device class (for example, mm/12h for precipitation).
-                self._attr_device_class = None
-            else:
-                self._attr_native_unit_of_measurement = source_unit
-                self._attr_device_class = source_state.attributes.get("device_class")
+            self._attr_native_unit_of_measurement = source_state.attributes.get(
+                "unit_of_measurement"
+            )
+            self._attr_device_class = source_state.attributes.get("device_class")
 
         # Home Assistant 2026.8+ helper integrations link entities directly to
         # the source device instead of merging config entries through DeviceInfo.
@@ -97,9 +86,7 @@ class HourlySensorEntity(SensorEntity):
             "completed_hours": min(
                 self._controller.accumulator.completed_hours, self._hours
             ),
-            "last_completed_hour": (
-                self._controller.accumulator.last_completed_hour
-            ),
+            "last_completed_hour": (self._controller.accumulator.last_completed_hour),
             "source_available": source_state is not None
             and source_state.state not in ("unknown", "unavailable"),
         }

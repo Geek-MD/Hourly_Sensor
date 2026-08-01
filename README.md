@@ -28,10 +28,8 @@ updated on the hour and keeps only the requested number of completed clock hours
 - Automatically removes the oldest hour; a 12-hour sensor discards hour 13.
 - Statistics: cumulative change, sum, average, minimum, maximum, and last value.
 - Handles cumulative meter resets when using **Change**.
-- Preserves the source unit context:
-  - `mm` over one hour → `mm/h`
-  - `mm` over twelve hours → `mm/12h`
-  - Average/minimum/maximum/last preserve the original unit.
+- Inherits the monitored sensor's unit of measurement and device class.
+- Reports `0` instead of an unknown state until completed-hour data is available.
 - Links the generated entity to the device that owns the monitored sensor.
 - Persists internal hourly buckets across Home Assistant restarts.
 - Exposes `average`, `minimum`, and `maximum` attributes calculated from all

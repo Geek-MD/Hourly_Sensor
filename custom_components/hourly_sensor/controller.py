@@ -107,9 +107,7 @@ class HourlySensorController:
 
     @callback
     def _updated(self) -> None:
-        self._store.async_delay_save(
-            self.accumulator.as_dict, _SAVE_DELAY_SECONDS
-        )
+        self._store.async_delay_save(self.accumulator.as_dict, _SAVE_DELAY_SECONDS)
         for listener in self._listeners:
             listener()
 
@@ -123,6 +121,6 @@ class HourlySensorController:
             return None
         try:
             return float(raw)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             _LOGGER.debug("Ignoring non-numeric source state: %s", raw)
             return None
