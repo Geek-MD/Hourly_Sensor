@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from statistics import fmean
 from typing import Any
 
@@ -97,13 +97,26 @@ class HourlyAccumulator:
         current = self._current
         if current is None or current.start != start:
             if current is not None:
-                # A cumulative reading at an hour boundary is both the ending
-                # value for the elapsed hour and the baseline for the new one.
-                if self.aggregation == AGGREGATION_CHANGE:
-                    current.samples.append(value)
-                    current.terminal_sample = True
-                self._complete(current)
-            self.buckets.append(HourBucket(start=start, samples=[value]))
+                # Recorder only stores state changes. Fill clock hours without
+                # changes so a sparse cumulative source still has a real
+                # rolling-hour window after Home Assistant restarts.
+                baseline = current.samples[-1] if current.samples else value
+                next_start = datetime.fromisoformat(current.start) + timedelta(hours=1)
+                target_start = hour_start(moment)
+                while next_start <= target_start:
+                    if self.aggregation == AGGREGATION_CHANGE:
+                        current.samples.append(baseline)
+                        current.terminal_sample = True
+                    self._complete(current)
+                    samples = (
+                        [baseline] if self.aggregation == AGGREGATION_CHANGE else []
+                    )
+                    current = HourBucket(start=next_start.isoformat(), samples=samples)
+                    self.buckets.append(current)
+                    next_start += timedelta(hours=1)
+                current.samples.append(value)
+            else:
+                self.buckets.append(HourBucket(start=start, samples=[value]))
         else:
             current.samples.append(value)
         self._prune()

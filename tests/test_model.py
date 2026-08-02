@@ -1,6 +1,6 @@
 """Tests for the hourly aggregation model."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 
@@ -162,3 +162,27 @@ def test_intermediate_sample_statistics_ignore_partial_hour() -> None:
         "minimum": 1,
         "maximum": 5,
     }
+
+
+def test_sparse_cumulative_history_fills_hours_across_daily_reset() -> None:
+    """Recorder state changes rebuild chronological windows after a restart."""
+    accumulator = HourlyAccumulator(12, AGGREGATION_CHANGE)
+    start = _moment(18, 46)
+    samples = [
+        (start, 0),
+        (start.replace(hour=21, minute=55), 0.1),
+        (start.replace(hour=23, minute=55), 0),
+        (start + timedelta(days=1, hours=-13, minutes=-41), 0.1),
+        (start + timedelta(days=1, hours=-11, minutes=-41), 0.2),
+        (start + timedelta(days=1, hours=-11, minutes=4), 0.3),
+        (start + timedelta(days=1), 0.3),
+    ]
+
+    for moment, value in samples:
+        accumulator.add_sample(moment, value)
+
+    assert accumulator.value == pytest.approx(0.2)
+    assert accumulator.completed_hours == 12
+    assert accumulator.last_completed_hour == datetime(  # noqa: DTZ001
+        2026, 8, 1, 17
+    ).isoformat()
