@@ -71,7 +71,6 @@ class HourlySensorController:
     async def async_initialize(self) -> None:
         """Restore data and start listeners."""
         stored = await self._store.async_load()
-        restored = False
         if stored is not None:
             stored_source = stored.get("source_entity")
             stored_type = stored.get("source_type")
@@ -85,10 +84,13 @@ class HourlySensorController:
                     window_hours=self.accumulator.window_hours,
                     aggregation=self.accumulator.aggregation,
                 )
-                restored = True
 
         now = dt_util.now()
-        if not restored and self.source_type == SOURCE_TYPE_CUMULATIVE:
+        # Stored data can be stale after an unclean shutdown and contains no
+        # samples for the time Home Assistant was stopped. Recorder is the
+        # authoritative source for cumulative windows, so rebuild them on every
+        # startup. Keep storage as a fallback when Recorder has no usable data.
+        if self.source_type == SOURCE_TYPE_CUMULATIVE:
             await self._async_restore_history(now)
         current_value = self._numeric_state()
         if current_value is not None:
@@ -106,7 +108,7 @@ class HourlySensorController:
         )
 
     async def _async_restore_history(self, now: datetime) -> None:
-        """Rebuild a cumulative window after creation or source replacement."""
+        """Rebuild a cumulative window from Recorder when data is available."""
         try:
             recorder = get_instance(self.hass)
         except KeyError:
@@ -120,16 +122,29 @@ class HourlySensorController:
             now,
             [self.source_entity],
         )
-        self._add_historical_states(states.get(self.source_entity, []))
+        historical_states = states.get(self.source_entity, [])
+        rebuilt = HourlyAccumulator(
+            self.accumulator.window_hours, self.accumulator.aggregation
+        )
+        if self._add_historical_states(historical_states, rebuilt):
+            self.accumulator = rebuilt
 
-    def _add_historical_states(self, states: list[State | dict[str, Any]]) -> None:
+    def _add_historical_states(
+        self,
+        states: list[State | dict[str, Any]],
+        accumulator: HourlyAccumulator | None = None,
+    ) -> bool:
         """Add numeric recorder states to the fresh accumulator in time order."""
+        target = self.accumulator if accumulator is None else accumulator
+        added = False
         for state in states:
             if not isinstance(state, State):
                 continue
             value = self._parse_value(state.state)
             if value is not None:
-                self.accumulator.add_sample(dt_util.as_local(state.last_updated), value)
+                target.add_sample(dt_util.as_local(state.last_updated), value)
+                added = True
+        return added
 
     async def async_shutdown(self) -> None:
         """Stop listeners and save immediately."""

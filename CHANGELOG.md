@@ -5,6 +5,15 @@ All notable changes to Hourly Sensor will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.2.2] - 2026-08-02
+
+### Fixed
+
+- Rebuild cumulative rolling windows from Recorder after every Home Assistant
+  restart, instead of trusting potentially stale persisted buckets.
+- Fill unchanged clock hours when rebuilding sparse Recorder history, preserving
+  correct 1, 12, and 24-hour windows across restarts and daily meter resets.
+
 ## [v0.2.1] - 2026-08-02
 
 ### Fixed
