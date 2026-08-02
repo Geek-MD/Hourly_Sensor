@@ -1,8 +1,10 @@
 """Tests for source data-type detection."""
 
+from datetime import UTC, datetime
 from types import SimpleNamespace
 
 import pytest
+from homeassistant.core import State
 
 from custom_components.hourly_sensor.const import (
     SOURCE_TYPE_AUTO,
@@ -10,6 +12,11 @@ from custom_components.hourly_sensor.const import (
     SOURCE_TYPE_INSTANTANEOUS,
 )
 from custom_components.hourly_sensor.controller import HourlySensorController
+from custom_components.hourly_sensor.model import HourlyAccumulator
+
+
+def _moment(hour: int, minute: int = 0) -> datetime:
+    return datetime(2026, 8, 2, hour, minute, tzinfo=UTC)
 
 
 @pytest.mark.parametrize(
@@ -62,3 +69,18 @@ def test_storage_from_another_data_type_is_not_restored() -> None:
     controller.source_type = SOURCE_TYPE_INSTANTANEOUS
 
     assert not controller._can_restore("sensor.source", SOURCE_TYPE_CUMULATIVE)
+
+
+def test_recorder_history_rebuilds_changed_cumulative_source() -> None:
+    """A source change retains cumulative growth already recorded in the window."""
+    controller = object.__new__(HourlySensorController)
+    controller.accumulator = HourlyAccumulator(2, "change")
+    states = [
+        State("sensor.source", "0.0", last_updated=_moment(10)),
+        State("sensor.source", "0.3", last_updated=_moment(10, 20)),
+        State("sensor.source", "0.3", last_updated=_moment(11)),
+    ]
+
+    controller._add_historical_states(states)
+
+    assert controller.accumulator.value == pytest.approx(0.3)

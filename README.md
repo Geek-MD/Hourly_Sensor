@@ -75,10 +75,17 @@ updated on the hour and keeps only the requested number of completed clock hours
 4. Repeat **Add Integration** to create additional sensors.
 
 An existing sensor can be changed from the integration entry's **Configure**
-dialog. Saving the options reloads the entry automatically. If the monitored
-entity or its data type changes, Hourly Sensor discards the stored buckets from
-the previous source and begins a new calculation using the current reading of
-the newly selected entity; values from two different entities are never mixed.
+dialog under **Settings → Devices & Services → Integrations**. Saving the options
+reloads the entry automatically. If the monitored entity or its data type changes,
+Hourly Sensor discards the stored buckets from the previous source and begins a
+new calculation using the current reading of the newly selected entity; values
+from two different entities are never mixed.
+
+For cumulative sources, Hourly Sensor rebuilds the active rolling window from
+Home Assistant's Recorder after creation or a source change. This makes already
+recorded changes (such as rain accumulated since a midnight reset) available
+without waiting for another complete hour. The source entity must not be excluded
+from Recorder for this backfill to be available.
 
 ### Statistics
 

@@ -4,15 +4,23 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
+from homeassistant.components.recorder import history
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
-from homeassistant.core import Event, EventStateChangedData, HomeAssistant, callback
+from homeassistant.core import (
+    Event,
+    EventStateChangedData,
+    HomeAssistant,
+    State,
+    callback,
+)
 from homeassistant.helpers.event import (
     async_track_state_change_event,
     async_track_time_change,
 )
+from homeassistant.helpers.recorder import get_instance
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
@@ -22,7 +30,7 @@ from .const import (
     SOURCE_TYPE_CUMULATIVE,
     SOURCE_TYPE_INSTANTANEOUS,
 )
-from .model import HourlyAccumulator
+from .model import HourlyAccumulator, hour_start
 
 _LOGGER = logging.getLogger(__name__)
 _STORAGE_VERSION = 1
@@ -63,6 +71,7 @@ class HourlySensorController:
     async def async_initialize(self) -> None:
         """Restore data and start listeners."""
         stored = await self._store.async_load()
+        restored = False
         if stored is not None:
             stored_source = stored.get("source_entity")
             stored_type = stored.get("source_type")
@@ -76,8 +85,11 @@ class HourlySensorController:
                     window_hours=self.accumulator.window_hours,
                     aggregation=self.accumulator.aggregation,
                 )
+                restored = True
 
         now = dt_util.now()
+        if not restored and self.source_type == SOURCE_TYPE_CUMULATIVE:
+            await self._async_restore_history(now)
         current_value = self._numeric_state()
         if current_value is not None:
             self.accumulator.add_sample(now, current_value)
@@ -92,6 +104,32 @@ class HourlySensorController:
                 ),
             )
         )
+
+    async def _async_restore_history(self, now: datetime) -> None:
+        """Rebuild a cumulative window after creation or source replacement."""
+        try:
+            recorder = get_instance(self.hass)
+        except KeyError:
+            return
+
+        start = hour_start(now) - timedelta(hours=self.accumulator.window_hours)
+        states = await recorder.async_add_executor_job(
+            history.get_significant_states,
+            self.hass,
+            start,
+            now,
+            [self.source_entity],
+        )
+        self._add_historical_states(states.get(self.source_entity, []))
+
+    def _add_historical_states(self, states: list[State | dict[str, Any]]) -> None:
+        """Add numeric recorder states to the fresh accumulator in time order."""
+        for state in states:
+            if not isinstance(state, State):
+                continue
+            value = self._parse_value(state.state)
+            if value is not None:
+                self.accumulator.add_sample(dt_util.as_local(state.last_updated), value)
 
     async def async_shutdown(self) -> None:
         """Stop listeners and save immediately."""
