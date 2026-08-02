@@ -99,6 +99,14 @@ class HourlySensorEntity(SensorEntity):
                 self._controller.accumulator.completed_hours, self._hours
             ),
             "last_completed_hour": (self._controller.accumulator.last_completed_hour),
+            "last_period": (
+                None
+                if self._controller.accumulator.last_period is None
+                else round(
+                    self._controller.accumulator.last_period,
+                    self._precision,
+                )
+            ),
             "source_available": source_state is not None
             and source_state.state not in ("unknown", "unavailable"),
         }

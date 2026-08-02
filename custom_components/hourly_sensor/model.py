@@ -51,6 +51,7 @@ class HourlyAccumulator:
     window_hours: int
     aggregation: str
     buckets: list[HourBucket] = field(default_factory=list)
+    last_period: float | None = None
 
     def __post_init__(self) -> None:
         """Normalize values supplied by Home Assistant selectors."""
@@ -67,13 +68,26 @@ class HourlyAccumulator:
             window_hours=window_hours,
             aggregation=aggregation,
             buckets=[HourBucket.from_dict(item) for item in raw.get("buckets", [])],
+            last_period=(
+                float(raw["last_period"])
+                if raw.get("last_period") is not None
+                else None
+            ),
         )
         accumulator._prune()
+        if accumulator.last_period is None:
+            for bucket in reversed(accumulator.buckets):
+                if bucket.complete and bucket.samples:
+                    accumulator.last_period = accumulator._aggregate(bucket.samples)
+                    break
         return accumulator
 
     def as_dict(self) -> dict[str, Any]:
         """Serialize the accumulator."""
-        return {"buckets": [bucket.as_dict() for bucket in self.buckets]}
+        return {
+            "buckets": [bucket.as_dict() for bucket in self.buckets],
+            "last_period": self.last_period,
+        }
 
     def add_sample(self, moment: datetime, value: float) -> None:
         """Add one numeric sample, closing elapsed hourly buckets."""
@@ -81,7 +95,7 @@ class HourlyAccumulator:
         current = self._current
         if current is None or current.start != start:
             if current is not None:
-                current.complete = True
+                self._complete(current)
             self.buckets.append(HourBucket(start=start, samples=[value]))
         else:
             current.samples.append(value)
@@ -92,7 +106,7 @@ class HourlyAccumulator:
         start = hour_start(moment).isoformat()
         current = self._current
         if current is not None and current.start != start:
-            current.complete = True
+            self._complete(current)
         if current is None or current.start != start:
             samples = [] if current_value is None else [current_value]
             self.buckets.append(HourBucket(start=start, samples=samples))
@@ -169,6 +183,28 @@ class HourlyAccumulator:
         maximum = self.window_hours + 1
         if len(self.buckets) > maximum:
             self.buckets = self.buckets[-maximum:]
+
+    def _complete(self, bucket: HourBucket) -> None:
+        """Close a bucket and remember its value independently of the window."""
+        bucket.complete = True
+        if bucket.samples:
+            self.last_period = self._aggregate(bucket.samples)
+
+    def _aggregate(self, samples: list[float]) -> float:
+        """Calculate the configured statistic for a collection of samples."""
+        if self.aggregation == AGGREGATION_CHANGE:
+            return self._change(samples)
+        if self.aggregation == AGGREGATION_SUM:
+            return sum(samples)
+        if self.aggregation == AGGREGATION_AVERAGE:
+            return fmean(samples)
+        if self.aggregation == AGGREGATION_MINIMUM:
+            return min(samples)
+        if self.aggregation == AGGREGATION_MAXIMUM:
+            return max(samples)
+        if self.aggregation == AGGREGATION_LAST:
+            return samples[-1]
+        raise ValueError(f"Unsupported aggregation: {self.aggregation}")
 
     @staticmethod
     def _change(samples: list[float]) -> float:

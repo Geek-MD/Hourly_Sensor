@@ -62,3 +62,22 @@ def test_source_metadata_is_resolved_after_source_loads() -> None:
     assert entity.native_unit_of_measurement == "mm"
     assert entity.device_class == "precipitation"
     assert entity.state_class == "measurement"
+
+
+def test_last_period_attribute_uses_configured_precision() -> None:
+    """The stable completed-period value is available to automations."""
+    states = _States()
+    entity = _entity(states)
+    entity._aggregation = "change"
+    entity._hours = 1
+    entity._precision = 2
+    entity._controller = SimpleNamespace(
+        accumulator=SimpleNamespace(
+            completed_hours=1,
+            last_completed_hour="2026-08-02T10:00:00",
+            last_period=1.234,
+            sample_statistics=None,
+        )
+    )
+
+    assert entity.extra_state_attributes["last_period"] == 1.23

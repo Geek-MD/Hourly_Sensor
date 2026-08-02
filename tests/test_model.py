@@ -71,6 +71,44 @@ def test_storage_round_trip() -> None:
     )
 
     assert restored.value == 2
+    assert restored.last_period == 2
+
+
+def test_existing_storage_derives_last_period() -> None:
+    """Storage written before v0.1.4 provides the latest completed value."""
+    restored = HourlyAccumulator.from_dict(
+        {
+            "buckets": [
+                {
+                    "start": _moment(10).isoformat(),
+                    "samples": [10, 15],
+                    "complete": True,
+                }
+            ]
+        },
+        window_hours=1,
+        aggregation=AGGREGATION_CHANGE,
+    )
+
+    assert restored.last_period == 5
+
+
+def test_last_period_survives_rolling_window_pruning() -> None:
+    """The last closed period remains available after its bucket is discarded."""
+    accumulator = HourlyAccumulator(1, AGGREGATION_CHANGE)
+    accumulator.add_sample(_moment(10), 10)
+    accumulator.add_sample(_moment(10, 30), 14)
+    accumulator.add_sample(_moment(11), 14)
+
+    assert accumulator.last_period == 4
+
+    accumulator.add_sample(_moment(11, 30), 20)
+    accumulator.add_sample(_moment(12), 20)
+
+    assert accumulator.last_period == 6
+    assert all(
+        bucket.start != _moment(10).isoformat() for bucket in accumulator.buckets
+    )
 
 
 def test_number_selector_float_window_is_normalized() -> None:
