@@ -4,16 +4,43 @@
     "step": {
       "user": {
         "title": "Create an hourly sensor",
-        "description": "The value is calculated from completed clock hours and updated at the start of every hour.",
+        "description": "The value is calculated from completed clock hours. Automatic type detection identifies meters from Home Assistant state-class metadata.",
         "data": {
           "name": "Name",
           "source_entity": "Source sensor",
+          "source_type": "Data type",
           "aggregation": "Statistic",
           "hours": "Rolling window (hours)",
           "precision": "Decimal places"
         },
         "data_description": {
-          "aggregation": "Change handles cumulative meters and resets. Sum adds every reported sample; average, minimum, maximum and last operate on the reported samples.",
+          "source_type": "Automatic treats total and total_increasing state classes as cumulative. Override it when an entity does not publish correct metadata.",
+          "aggregation": "Select the statistic for instantaneous data. Cumulative data always uses the difference and handles resets.",
+          "hours": "Between 1 and 168 completed clock hours."
+        }
+      }
+    },
+    "error": {
+      "entity_not_found": "The selected entity does not exist.",
+      "source_not_numeric": "The selected entity does not currently have a numeric state."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Edit hourly sensor",
+        "description": "Changing the source sensor discards the previous internal history and starts calculating from the new entity.",
+        "data": {
+          "name": "Name",
+          "source_entity": "Source sensor",
+          "source_type": "Data type",
+          "aggregation": "Statistic",
+          "hours": "Rolling window (hours)",
+          "precision": "Decimal places"
+        },
+        "data_description": {
+          "source_type": "Automatic recognizes total and total_increasing as cumulative.",
+          "aggregation": "The statistic applies to instantaneous data; cumulative data uses differences.",
           "hours": "Between 1 and 168 completed clock hours."
         }
       }
@@ -24,6 +51,13 @@
     }
   },
   "selector": {
+    "source_type": {
+      "options": {
+        "auto": "Automatic (recommended)",
+        "instantaneous": "Instantaneous",
+        "cumulative": "Cumulative"
+      }
+    },
     "aggregation": {
       "options": {
         "change": "Change (cumulative meter)",

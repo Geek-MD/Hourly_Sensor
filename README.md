@@ -24,6 +24,9 @@ updated on the hour and keeps only the requested number of completed clock hours
 
 - Create any number of hourly sensors from the Home Assistant UI.
 - Monitor any numeric `sensor` entity.
+- Automatically distinguishes instantaneous sensors from cumulative meters by
+  their Home Assistant `state_class`, with an explicit override for incomplete
+  or incorrect source metadata.
 - Rolling windows from **1 to 168 completed hours**.
 - Automatically removes the oldest hour; a 12-hour sensor discards hour 13.
 - Statistics: cumulative change, sum, average, minimum, maximum, and last value.
@@ -68,10 +71,25 @@ updated on the hour and keeps only the requested number of completed clock hours
 
 1. Go to **Settings → Devices & Services → Add Integration**.
 2. Search for **Hourly Sensor**.
-3. Choose a name, source sensor, statistic, rolling window, and precision.
+3. Choose a name, source sensor, data type, statistic, rolling window, and precision.
 4. Repeat **Add Integration** to create additional sensors.
 
+An existing sensor can be changed from the integration entry's **Configure**
+dialog. Saving the options reloads the entry automatically. If the monitored
+entity or its data type changes, Hourly Sensor discards the stored buckets from
+the previous source and begins a new calculation using the current reading of
+the newly selected entity; values from two different entities are never mixed.
+
 ### Statistics
+
+In **Automatic** mode, sources with `state_class: total` or
+`state_class: total_increasing` are cumulative; all other sources are treated as
+instantaneous. You can explicitly choose either type when a source integration
+does not expose reliable metadata. Cumulative sources always produce the sum of
+the positive differences between readings. If the reading decreases, Hourly
+Sensor treats it as a meter reset and adds the new reading after the reset.
+
+The statistic selector applies to instantaneous sources:
 
 | Statistic | Intended use | Rolling result |
 |-----------|--------------|----------------|
@@ -99,6 +117,8 @@ omit its history from the database. Remove that exclusion to retain its values.
 
 Hourly Sensor crea sensores estadísticos con ventanas móviles de horas naturales
 completas. Permite calcular cambio, suma, promedio, mínimo, máximo o último valor,
+detecta automáticamente contadores acumulativos mediante `state_class` y permite
+forzar manualmente el tipo cuando los metadatos del sensor no son correctos,
 conserva sus buckets tras reinicios, registra cada actualización en el historial de
 Home Assistant y asocia la entidad nueva al dispositivo del sensor de origen.
 

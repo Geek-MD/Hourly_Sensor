@@ -16,6 +16,12 @@ from homeassistant.helpers.event import (
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
+from .const import (
+    AGGREGATION_CHANGE,
+    SOURCE_TYPE_AUTO,
+    SOURCE_TYPE_CUMULATIVE,
+    SOURCE_TYPE_INSTANTANEOUS,
+)
 from .model import HourlyAccumulator
 
 _LOGGER = logging.getLogger(__name__)
@@ -34,11 +40,20 @@ class HourlySensorController:
         source_entity: str,
         window_hours: int,
         aggregation: str,
+        source_type: str,
     ) -> None:
         """Initialize the controller."""
         self.hass = hass
         self.source_entity = source_entity
-        self.accumulator = HourlyAccumulator(window_hours, aggregation)
+        self.configured_aggregation = aggregation
+        self.configured_source_type = source_type
+        self.source_type = self._resolve_source_type()
+        effective_aggregation = (
+            AGGREGATION_CHANGE
+            if self.source_type == SOURCE_TYPE_CUMULATIVE
+            else aggregation
+        )
+        self.accumulator = HourlyAccumulator(window_hours, effective_aggregation)
         self._store: Store[dict[str, Any]] = Store(
             hass, _STORAGE_VERSION, f"hourly_sensor.{entry_id}"
         )
@@ -49,11 +64,18 @@ class HourlySensorController:
         """Restore data and start listeners."""
         stored = await self._store.async_load()
         if stored is not None:
-            self.accumulator = HourlyAccumulator.from_dict(
-                stored,
-                window_hours=self.accumulator.window_hours,
-                aggregation=self.accumulator.aggregation,
-            )
+            stored_source = stored.get("source_entity")
+            stored_type = stored.get("source_type")
+            # Storage from releases before editing support has no identity
+            # metadata and remains compatible. Once metadata exists, changing
+            # the source/type starts a clean calculation for the new entity.
+            if self._can_restore(stored_source, stored_type):
+                raw_accumulator = stored.get("accumulator", stored)
+                self.accumulator = HourlyAccumulator.from_dict(
+                    raw_accumulator,
+                    window_hours=self.accumulator.window_hours,
+                    aggregation=self.accumulator.aggregation,
+                )
 
         now = dt_util.now()
         current_value = self._numeric_state()
@@ -76,7 +98,7 @@ class HourlySensorController:
         for remove in self._remove_callbacks:
             remove()
         self._remove_callbacks.clear()
-        await self._store.async_save(self.accumulator.as_dict())
+        await self._store.async_save(self._storage_data())
 
     @callback
     def async_add_listener(self, listener: Callable[[], None]) -> Callable[[], None]:
@@ -94,6 +116,7 @@ class HourlySensorController:
         new_state = event.data["new_state"]
         if new_state is None:
             return
+        self._refresh_auto_source_type()
         value = self._parse_value(new_state.state)
         if value is None:
             return
@@ -107,13 +130,49 @@ class HourlySensorController:
 
     @callback
     def _updated(self) -> None:
-        self._store.async_delay_save(self.accumulator.as_dict, _SAVE_DELAY_SECONDS)
+        self._store.async_delay_save(self._storage_data, _SAVE_DELAY_SECONDS)
         for listener in self._listeners:
             listener()
 
     def _numeric_state(self) -> float | None:
         state = self.hass.states.get(self.source_entity)
         return None if state is None else self._parse_value(state.state)
+
+    def _resolve_source_type(self) -> str:
+        """Resolve automatic mode from Home Assistant's state class metadata."""
+        if self.configured_source_type != SOURCE_TYPE_AUTO:
+            return self.configured_source_type
+        state = self.hass.states.get(self.source_entity)
+        state_class = None if state is None else state.attributes.get("state_class")
+        if state_class in ("total", "total_increasing"):
+            return SOURCE_TYPE_CUMULATIVE
+        return SOURCE_TYPE_INSTANTANEOUS
+
+    def _refresh_auto_source_type(self) -> None:
+        """Detect metadata that appeared after setup, before collecting data."""
+        if self.configured_source_type != SOURCE_TYPE_AUTO or self.accumulator.buckets:
+            return
+        self.source_type = self._resolve_source_type()
+        self.accumulator.aggregation = (
+            AGGREGATION_CHANGE
+            if self.source_type == SOURCE_TYPE_CUMULATIVE
+            else self.configured_aggregation
+        )
+
+    def _storage_data(self) -> dict[str, Any]:
+        """Include source identity so edited entries cannot reuse stale data."""
+        return {
+            "source_entity": self.source_entity,
+            "source_type": self.source_type,
+            "accumulator": self.accumulator.as_dict(),
+        }
+
+    def _can_restore(self, stored_source: Any, stored_type: Any) -> bool:
+        """Return whether persisted samples belong to this configuration."""
+        return stored_source in (None, self.source_entity) and stored_type in (
+            None,
+            self.source_type,
+        )
 
     @staticmethod
     def _parse_value(raw: str) -> float | None:

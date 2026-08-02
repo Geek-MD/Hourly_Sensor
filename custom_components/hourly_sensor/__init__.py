@@ -14,8 +14,10 @@ from .const import (
     CONF_AGGREGATION,
     CONF_HOURS,
     CONF_SOURCE_ENTITY,
+    CONF_SOURCE_TYPE,
     DEFAULT_AGGREGATION,
     DEFAULT_HOURS,
+    DEFAULT_SOURCE_TYPE,
     DOMAIN,
 )
 from .controller import HourlySensorController
@@ -39,16 +41,28 @@ async def async_setup(hass: HomeAssistant, config: vol.Schema) -> bool:
     return True
 
 
+async def async_migrate_entry(
+    hass: HomeAssistant, entry: HourlySensorConfigEntry
+) -> bool:
+    """Migrate pre-0.2 entries to automatic source-type detection."""
+    if entry.version == 1:
+        data = {**entry.data, CONF_SOURCE_TYPE: DEFAULT_SOURCE_TYPE}
+        hass.config_entries.async_update_entry(entry, data=data, version=2)
+    return True
+
+
 async def async_setup_entry(
     hass: HomeAssistant, entry: HourlySensorConfigEntry
 ) -> bool:
     """Set up Hourly Sensor from a config entry."""
+    config = {**entry.data, **entry.options}
     controller = HourlySensorController(
         hass,
         entry_id=entry.entry_id,
-        source_entity=entry.data[CONF_SOURCE_ENTITY],
-        window_hours=entry.data.get(CONF_HOURS, DEFAULT_HOURS),
-        aggregation=entry.data.get(CONF_AGGREGATION, DEFAULT_AGGREGATION),
+        source_entity=config[CONF_SOURCE_ENTITY],
+        window_hours=config.get(CONF_HOURS, DEFAULT_HOURS),
+        aggregation=config.get(CONF_AGGREGATION, DEFAULT_AGGREGATION),
+        source_type=config.get(CONF_SOURCE_TYPE, DEFAULT_SOURCE_TYPE),
     )
     await controller.async_initialize()
     entry.runtime_data = HourlySensorRuntimeData(controller)

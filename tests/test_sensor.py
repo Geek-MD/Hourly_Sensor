@@ -42,6 +42,14 @@ def test_source_metadata_is_inherited() -> None:
     assert entity.state_class == "measurement"
 
 
+def test_total_source_is_exposed_as_rolling_measurement() -> None:
+    """A rolling result must not claim to be a monotonically increasing total."""
+    states = _States()
+    states.state = SimpleNamespace(attributes={"state_class": "total_increasing"})
+
+    assert _entity(states).state_class == "measurement"
+
+
 def test_source_metadata_is_resolved_after_source_loads() -> None:
     """Metadata remains dynamic when the source is initially unavailable."""
     states = _States()
@@ -71,13 +79,15 @@ def test_last_period_attribute_uses_configured_precision() -> None:
     entity._aggregation = "change"
     entity._hours = 1
     entity._precision = 2
+    entity._configured_source_type = "auto"
     entity._controller = SimpleNamespace(
+        source_type="cumulative",
         accumulator=SimpleNamespace(
             completed_hours=1,
             last_completed_hour="2026-08-02T10:00:00",
             last_period=1.234,
             sample_statistics=None,
-        )
+        ),
     )
 
     assert entity.extra_state_attributes["last_period"] == 1.23
