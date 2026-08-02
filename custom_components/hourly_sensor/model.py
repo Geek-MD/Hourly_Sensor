@@ -29,6 +29,7 @@ class HourBucket:
     start: str
     samples: list[float] = field(default_factory=list)
     complete: bool = False
+    terminal_sample: bool = False
 
     @classmethod
     def from_dict(cls, raw: dict[str, Any]) -> HourBucket:
@@ -37,6 +38,7 @@ class HourBucket:
             start=str(raw["start"]),
             samples=[float(value) for value in raw.get("samples", [])],
             complete=bool(raw.get("complete", False)),
+            terminal_sample=bool(raw.get("terminal_sample", False)),
         )
 
     def as_dict(self) -> dict[str, Any]:
@@ -95,6 +97,11 @@ class HourlyAccumulator:
         current = self._current
         if current is None or current.start != start:
             if current is not None:
+                # A cumulative reading at an hour boundary is both the ending
+                # value for the elapsed hour and the baseline for the new one.
+                if self.aggregation == AGGREGATION_CHANGE:
+                    current.samples.append(value)
+                    current.terminal_sample = True
                 self._complete(current)
             self.buckets.append(HourBucket(start=start, samples=[value]))
         else:
@@ -106,6 +113,9 @@ class HourlyAccumulator:
         start = hour_start(moment).isoformat()
         current = self._current
         if current is not None and current.start != start:
+            if self.aggregation == AGGREGATION_CHANGE and current_value is not None:
+                current.samples.append(current_value)
+                current.terminal_sample = True
             self._complete(current)
         if current is None or current.start != start:
             samples = [] if current_value is None else [current_value]
@@ -172,11 +182,13 @@ class HourlyAccumulator:
         complete = [
             bucket for bucket in self.buckets if bucket.complete and bucket.samples
         ]
-        return [
-            sample
-            for bucket in complete[-self.window_hours :]
-            for sample in bucket.samples
-        ]
+        samples: list[float] = []
+        for bucket in complete[-self.window_hours :]:
+            bucket_samples = bucket.samples
+            if bucket.terminal_sample:
+                bucket_samples = bucket_samples[:-1]
+            samples.extend(bucket_samples)
+        return samples
 
     def _prune(self) -> None:
         # Retain the requested completed hours plus the current partial hour.

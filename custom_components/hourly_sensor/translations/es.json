@@ -4,16 +4,43 @@
     "step": {
       "user": {
         "title": "Crear un sensor horario",
-        "description": "El valor se calcula usando horas naturales completas y se actualiza al inicio de cada hora.",
+        "description": "El valor se calcula usando horas naturales completas. El tipo automático identifica los contadores por su clase de estado de Home Assistant.",
         "data": {
           "name": "Nombre",
           "source_entity": "Sensor de origen",
+          "source_type": "Tipo de datos",
           "aggregation": "Estadística",
           "hours": "Ventana móvil (horas)",
           "precision": "Decimales"
         },
         "data_description": {
-          "aggregation": "Cambio admite contadores acumulativos y reinicios. Suma agrega cada muestra recibida; promedio, mínimo, máximo y último operan sobre las muestras recibidas.",
+          "source_type": "Automático reconoce total y total_increasing como acumulativos. Usa una opción manual si la entidad no publica una clase de estado correcta.",
+          "aggregation": "Para datos instantáneos selecciona la estadística. Los datos acumulativos siempre calculan la diferencia y admiten reinicios.",
+          "hours": "Entre 1 y 168 horas naturales completas."
+        }
+      }
+    },
+    "error": {
+      "entity_not_found": "La entidad seleccionada no existe.",
+      "source_not_numeric": "La entidad seleccionada no tiene actualmente un estado numérico."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Editar sensor horario",
+        "description": "Al cambiar el sensor de origen, el historial interno anterior se descarta y el cálculo comienza con la nueva entidad.",
+        "data": {
+          "name": "Nombre",
+          "source_entity": "Sensor de origen",
+          "source_type": "Tipo de datos",
+          "aggregation": "Estadística",
+          "hours": "Ventana móvil (horas)",
+          "precision": "Decimales"
+        },
+        "data_description": {
+          "source_type": "Automático reconoce total y total_increasing como acumulativos.",
+          "aggregation": "La estadística se aplica a datos instantáneos; los acumulativos calculan diferencias.",
           "hours": "Entre 1 y 168 horas naturales completas."
         }
       }
@@ -24,6 +51,13 @@
     }
   },
   "selector": {
+    "source_type": {
+      "options": {
+        "auto": "Automático (recomendado)",
+        "instantaneous": "Instantáneo",
+        "cumulative": "Acumulativo"
+      }
+    },
     "aggregation": {
       "options": {
         "change": "Cambio (contador acumulativo)",

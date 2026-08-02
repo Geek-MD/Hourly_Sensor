@@ -20,9 +20,11 @@ from .const import (
     CONF_NAME,
     CONF_PRECISION,
     CONF_SOURCE_ENTITY,
+    CONF_SOURCE_TYPE,
     DEFAULT_AGGREGATION,
     DEFAULT_HOURS,
     DEFAULT_PRECISION,
+    DEFAULT_SOURCE_TYPE,
 )
 
 
@@ -42,12 +44,14 @@ class HourlySensorEntity(SensorEntity):
 
     def __init__(self, hass: HomeAssistant, entry: HourlySensorConfigEntry) -> None:
         """Initialize the sensor."""
+        config = {**entry.data, **entry.options}
         self._controller = entry.runtime_data.controller
-        self._source_entity = entry.data[CONF_SOURCE_ENTITY]
-        self._aggregation = entry.data.get(CONF_AGGREGATION, DEFAULT_AGGREGATION)
-        self._hours = int(entry.data.get(CONF_HOURS, DEFAULT_HOURS))
-        self._precision = int(entry.data.get(CONF_PRECISION, DEFAULT_PRECISION))
-        self._attr_name = entry.data[CONF_NAME]
+        self._source_entity = config[CONF_SOURCE_ENTITY]
+        self._aggregation = config.get(CONF_AGGREGATION, DEFAULT_AGGREGATION)
+        self._configured_source_type = config.get(CONF_SOURCE_TYPE, DEFAULT_SOURCE_TYPE)
+        self._hours = int(config.get(CONF_HOURS, DEFAULT_HOURS))
+        self._precision = int(config.get(CONF_PRECISION, DEFAULT_PRECISION))
+        self._attr_name = config[CONF_NAME]
         self._attr_unique_id = entry.entry_id
         self._attr_suggested_display_precision = self._precision
 
@@ -85,7 +89,11 @@ class HourlySensorEntity(SensorEntity):
     @property
     def state_class(self) -> SensorStateClass | None:
         """Return the source sensor's current state class."""
-        return cast(SensorStateClass | None, self._source_attribute("state_class"))
+        # A rolling value can decrease as its oldest hour expires, so it must
+        # not advertise itself as a monotonically increasing total.
+        if self._source_attribute("state_class") is None:
+            return None
+        return SensorStateClass.MEASUREMENT
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -94,6 +102,8 @@ class HourlySensorEntity(SensorEntity):
         attributes: dict[str, Any] = {
             "source_entity": self._source_entity,
             "aggregation": self._aggregation,
+            "source_type": self._controller.source_type,
+            "source_type_configured": self._configured_source_type,
             "window_hours": self._hours,
             "completed_hours": min(
                 self._controller.accumulator.completed_hours, self._hours

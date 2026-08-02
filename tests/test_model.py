@@ -37,6 +37,21 @@ def test_change_rolls_window_and_handles_reset() -> None:
     assert accumulator.completed_hours == 2
 
 
+def test_cumulative_baseline_is_carried_across_hour_boundary() -> None:
+    """Each hour includes growth from its boundary baseline and handles resets."""
+    accumulator = HourlyAccumulator(2, AGGREGATION_CHANGE)
+    accumulator.add_sample(_moment(10, 45), 100)
+    accumulator.close_hour(_moment(11), 105)
+    accumulator.add_sample(_moment(11, 30), 2)
+    accumulator.close_hour(_moment(12), 4)
+
+    assert accumulator.value == 9
+
+    accumulator.close_hour(_moment(13), 4)
+
+    assert accumulator.value == 4
+
+
 @pytest.mark.parametrize(
     ("aggregation", "expected"),
     [

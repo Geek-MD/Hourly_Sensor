@@ -5,6 +5,26 @@ All notable changes to Hourly Sensor will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.2.0] - 2026-08-02
+
+### Added
+
+- Automatically detect cumulative sources from the `total` and
+  `total_increasing` Home Assistant state classes.
+- Allow users to override the detected data type as instantaneous or cumulative
+  for source entities with missing or incorrect metadata.
+- Add a Configure dialog for editing the source, data type, statistic, rolling
+  window, precision, and name of an existing sensor.
+
+### Changed
+
+- Cumulative sources always calculate positive reading differences and handle a
+  decrease as a meter reset; the selected statistic applies to instantaneous data.
+- Publish the generated rolling sensor as a measurement because its value can
+  decrease when an old hour leaves the window.
+- Reset stored hourly buckets when the monitored entity or its data type changes,
+  preventing readings from different sources from being combined.
+
 ## [v0.1.4] - 2026-08-02
 
 ### Added

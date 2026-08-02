@@ -9,6 +9,16 @@ CONF_HOURS: Final = "hours"
 CONF_NAME: Final = "name"
 CONF_PRECISION: Final = "precision"
 CONF_SOURCE_ENTITY: Final = "source_entity"
+CONF_SOURCE_TYPE: Final = "source_type"
+
+SOURCE_TYPE_AUTO: Final = "auto"
+SOURCE_TYPE_INSTANTANEOUS: Final = "instantaneous"
+SOURCE_TYPE_CUMULATIVE: Final = "cumulative"
+SOURCE_TYPES: Final = (
+    SOURCE_TYPE_AUTO,
+    SOURCE_TYPE_INSTANTANEOUS,
+    SOURCE_TYPE_CUMULATIVE,
+)
 
 AGGREGATION_CHANGE: Final = "change"
 AGGREGATION_SUM: Final = "sum"
@@ -29,6 +39,7 @@ AGGREGATIONS: Final = (
 DEFAULT_AGGREGATION: Final = AGGREGATION_CHANGE
 DEFAULT_HOURS: Final = 1
 DEFAULT_PRECISION: Final = 2
+DEFAULT_SOURCE_TYPE: Final = SOURCE_TYPE_AUTO
 MIN_HOURS: Final = 1
 MAX_HOURS: Final = 168
 MIN_PRECISION: Final = 0
