@@ -5,6 +5,16 @@ All notable changes to Hourly Sensor will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.2.1] - 2026-08-02
+
+### Fixed
+
+- List configured hourly sensors under **Settings → Devices & Services →
+  Integrations**, so their Configure dialog remains accessible after creation.
+- Restore the active rolling window from Recorder when a cumulative sensor is
+  created or its source is changed, instead of showing zero until new readings
+  arrive and complete an hour.
+
 ## [v0.2.0] - 2026-08-02
 
 ### Added
