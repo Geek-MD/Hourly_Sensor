@@ -114,6 +114,6 @@ MIT License. See [LICENSE](LICENSE).
 
 <div align="center">
 
-💻 **Proudly developed with GitHub Copilot** 🚀
+💻 **Proudly developed with GitHub Copilot and ChatGPT Codex** 🚀
 
 </div>
