@@ -35,6 +35,8 @@ updated on the hour and keeps only the requested number of completed clock hours
 - Persists internal hourly buckets across Home Assistant restarts.
 - Exposes `average`, `minimum`, and `maximum` attributes calculated from all
   intermediate samples in the active completed-hour window.
+- Preserves the most recently completed hour's value in the `last_period`
+  attribute so delayed automations can still use it.
 - Every hourly entity state is stored by Home Assistant's `recorder`, unless the
   entity is explicitly excluded from recording by the user.
 - English and Spanish UI translations.
