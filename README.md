@@ -10,8 +10,8 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
 
-<p align="center">
-  <img src="custom_components/hourly_sensor/brand/logo.png" width="220" alt="Hourly Sensor logo">
+<p align="left">
+  <img src="https://github.com/Geek-MD/Hourly_Sensor/blob/main/custom_components/hourly_sensor/brand/icon.png?raw=true" width="200" alt="Hourly Sensor logo">
 </p>
 
 # Hourly Sensor
