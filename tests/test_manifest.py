@@ -17,4 +17,4 @@ def test_manifest_exposes_config_entries_as_devices() -> None:
     assert manifest["config_flow"] is True
     assert manifest["after_dependencies"] == ["recorder"]
     assert manifest["integration_type"] == "device"
-    assert manifest["version"] == "0.3.2"
+    assert manifest["version"] == "0.3.3"
