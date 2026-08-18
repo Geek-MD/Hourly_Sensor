@@ -4,12 +4,11 @@ from __future__ import annotations
 
 from homeassistant.components.button import ButtonEntity
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device import async_entity_id_to_device
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import HourlySensorConfigEntry
-from .const import CONF_SOURCE_ENTITY
+from .device import device_info_for_entry
 
 
 async def async_setup_entry(
@@ -31,10 +30,9 @@ class HourlySensorRecalculateButton(ButtonEntity):
 
     def __init__(self, hass: HomeAssistant, entry: HourlySensorConfigEntry) -> None:
         """Initialize the button."""
-        config = {**entry.data, **entry.options}
         self._controller = entry.runtime_data.controller
         self._attr_unique_id = f"{entry.entry_id}_recalculate"
-        self.device_entry = async_entity_id_to_device(hass, config[CONF_SOURCE_ENTITY])
+        self._attr_device_info = device_info_for_entry(entry)
 
     async def async_press(self) -> None:
         """Rebuild the paired sensor from its source history."""

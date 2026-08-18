@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 from typing import Any
 
+from custom_components.hourly_sensor.const import DOMAIN
 from custom_components.hourly_sensor.sensor import HourlySensorEntity
 
 
@@ -91,3 +92,21 @@ def test_last_period_attribute_uses_configured_precision() -> None:
     )
 
     assert entity.extra_state_attributes["last_period"] == 1.23
+
+
+def test_sensor_belongs_to_config_entry_device() -> None:
+    """The result is grouped on the hourly sensor's device summary."""
+    entry = SimpleNamespace(
+        entry_id="entry-id",
+        title="Hourly rain",
+        data={
+            "name": "Hourly rain",
+            "source_entity": "sensor.source",
+        },
+        options={},
+        runtime_data=SimpleNamespace(controller=object()),
+    )
+
+    entity = HourlySensorEntity(SimpleNamespace(), entry)
+
+    assert entity.device_info["identifiers"] == {(DOMAIN, "entry-id")}

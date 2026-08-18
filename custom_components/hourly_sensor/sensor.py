@@ -10,7 +10,6 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.device import async_entity_id_to_device
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import HourlySensorConfigEntry
@@ -26,6 +25,7 @@ from .const import (
     DEFAULT_PRECISION,
     DEFAULT_SOURCE_TYPE,
 )
+from .device import device_info_for_entry
 
 
 async def async_setup_entry(
@@ -55,9 +55,9 @@ class HourlySensorEntity(SensorEntity):
         self._attr_unique_id = entry.entry_id
         self._attr_suggested_display_precision = self._precision
 
-        # Home Assistant 2026.8+ helper integrations link entities directly to
-        # the source device instead of merging config entries through DeviceInfo.
-        self.device_entry = async_entity_id_to_device(hass, self._source_entity)
+        # A config entry is a virtual device whose summary groups the result and
+        # its recalculation control.
+        self._attr_device_info = device_info_for_entry(entry)
 
     async def async_added_to_hass(self) -> None:
         """Subscribe to controller updates."""

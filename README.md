@@ -36,7 +36,8 @@ updated on the hour and keeps only the requested number of completed clock hours
 - Dynamically inherits the monitored sensor's unit of measurement, device class,
   and state class, including when the source loads after the helper.
 - Reports `0` instead of an unknown state until completed-hour data is available.
-- Links the generated entity to the device that owns the monitored sensor.
+- Creates a dedicated virtual device for every configured hourly sensor and
+  groups its rolling sensor and recalculation button on the device page.
 - Persists internal hourly buckets across Home Assistant restarts.
 - Exposes `average`, `minimum`, and `maximum` attributes calculated from all
   intermediate samples in the active completed-hour window.
