@@ -203,15 +203,6 @@ those states are then persisted in Home Assistant's history database by `recorde
 If the entity is listed under `recorder.exclude`, Home Assistant will intentionally
 omit its history from the database. Remove that exclusion to retain its values.
 
-## 🇪🇸 Resumen
-
-Hourly Sensor crea sensores estadísticos con ventanas móviles de horas naturales
-completas. Permite calcular cambio, suma, promedio, mínimo, máximo o último valor,
-detecta automáticamente contadores acumulativos mediante `state_class` y permite
-forzar manualmente el tipo cuando los metadatos del sensor no son correctos,
-conserva sus buckets tras reinicios, registra cada actualización en el historial de
-Home Assistant y asocia la entidad nueva al dispositivo del sensor de origen.
-
 ## 🗂️ Changelog
 
 See [CHANGELOG.md](CHANGELOG.md).
