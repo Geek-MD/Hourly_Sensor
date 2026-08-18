@@ -21,6 +21,7 @@ from .const import (
     DOMAIN,
 )
 from .controller import HourlySensorController
+from .device import migrate_config_entry_devices
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 PLATFORMS = (Platform.SENSOR, Platform.BUTTON)
@@ -44,10 +45,13 @@ async def async_setup(hass: HomeAssistant, config: vol.Schema) -> bool:
 async def async_migrate_entry(
     hass: HomeAssistant, entry: HourlySensorConfigEntry
 ) -> bool:
-    """Migrate pre-0.2 entries to automatic source-type detection."""
+    """Migrate legacy data and device-based entries to the current model."""
     if entry.version == 1:
         data = {**entry.data, CONF_SOURCE_TYPE: DEFAULT_SOURCE_TYPE}
-        hass.config_entries.async_update_entry(entry, data=data, version=2)
+        hass.config_entries.async_update_entry(entry, data=data)
+    if entry.version < 3:
+        migrate_config_entry_devices(hass, entry.entry_id)
+        hass.config_entries.async_update_entry(entry, version=3)
     return True
 
 

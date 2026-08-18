@@ -87,6 +87,11 @@ Hourly Sensor discards the stored buckets from the previous source and begins a
 new calculation using the current reading of the newly selected entity; values
 from two different entities are never mixed.
 
+When upgrading from version 0.3.2 or 0.3.3, existing configurations are migrated
+automatically. Their old Hourly Sensor device association is removed and their
+sensor and recalculation button are then attached to the current source entity's
+device, so configurations do not need to be deleted and recreated.
+
 For cumulative sources, Hourly Sensor rebuilds the active rolling window from
 Home Assistant's Recorder after creation or a source change. This makes already
 recorded changes (such as rain accumulated since a midnight reset) available

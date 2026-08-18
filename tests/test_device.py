@@ -5,6 +5,30 @@ from types import SimpleNamespace
 from custom_components.hourly_sensor import device
 
 
+def test_existing_config_entry_device_associations_are_removed(monkeypatch) -> None:
+    """All devices claimed by a legacy config entry are released."""
+    devices = [SimpleNamespace(id="source-device"), SimpleNamespace(id="virtual")]
+    updates: list[tuple[str, str]] = []
+    device_registry = SimpleNamespace(
+        async_update_device=lambda device_id, **changes: updates.append(
+            (device_id, changes["remove_config_entry_id"])
+        )
+    )
+    monkeypatch.setattr(device.dr, "async_get", lambda hass: device_registry)
+    monkeypatch.setattr(
+        device.dr,
+        "async_entries_for_config_entry",
+        lambda registry, entry_id: devices,
+    )
+
+    device.migrate_config_entry_devices(SimpleNamespace(), "legacy-entry")
+
+    assert updates == [
+        ("source-device", "legacy-entry"),
+        ("virtual", "legacy-entry"),
+    ]
+
+
 def test_generated_entity_is_moved_to_source_device(monkeypatch) -> None:
     """The entity registry relation is updated without registering a device."""
     entries = {
