@@ -23,7 +23,7 @@ from .const import (
 from .controller import HourlySensorController
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
-PLATFORMS = (Platform.SENSOR,)
+PLATFORMS = (Platform.SENSOR, Platform.BUTTON)
 
 
 @dataclass(slots=True)

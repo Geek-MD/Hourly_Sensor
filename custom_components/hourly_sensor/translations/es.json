@@ -50,6 +50,13 @@
       "source_not_numeric": "La entidad seleccionada no tiene actualmente un estado numérico."
     }
   },
+  "entity": {
+    "button": {
+      "recalculate": {
+        "name": "Recalcular desde el historial"
+      }
+    }
+  },
   "selector": {
     "source_type": {
       "options": {

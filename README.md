@@ -23,6 +23,8 @@ updated on the hour and keeps only the requested number of completed clock hours
 ## ✨ Features
 
 - Create any number of hourly sensors from the Home Assistant UI.
+- Recalculate each hourly sensor on demand from its source entity's Recorder
+  history using the button created alongside it.
 - Monitor any numeric `sensor` entity.
 - Automatically distinguishes instantaneous sensors from cumulative meters by
   their Home Assistant `state_class`, with an explicit override for incomplete
@@ -86,6 +88,11 @@ Home Assistant's Recorder after creation or a source change. This makes already
 recorded changes (such as rain accumulated since a midnight reset) available
 without waiting for another complete hour. The source entity must not be excluded
 from Recorder for this backfill to be available.
+
+Every configured hourly sensor also creates a **Recalculate from history** button.
+Press it to discard the active internal window and rebuild it from the numeric
+states currently available in Recorder. If Recorder has no usable source history,
+the existing calculation is preserved.
 
 ### Statistics
 

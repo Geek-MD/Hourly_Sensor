@@ -50,6 +50,13 @@
       "source_not_numeric": "The selected entity does not currently have a numeric state."
     }
   },
+  "entity": {
+    "button": {
+      "recalculate": {
+        "name": "Recalculate from history"
+      }
+    }
+  },
   "selector": {
     "source_type": {
       "options": {
