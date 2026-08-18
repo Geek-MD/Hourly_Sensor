@@ -5,6 +5,17 @@ All notable changes to Hourly Sensor will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.4] - 2026-08-18
+
+### Changed
+
+- Present each configuration as an integration entry instead of claiming the
+  monitored physical device for Hourly Sensor.
+- Link the generated rolling sensor and recalculation button directly to the
+  source entity's existing device, following the HA Daily Counter approach.
+- Automatically migrate existing entries by removing the device associations
+  created by versions 0.3.2 and 0.3.3 before restoring their entity links.
+
 ## [v0.3.3] - 2026-08-18
 
 ### Changed

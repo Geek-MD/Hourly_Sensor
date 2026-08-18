@@ -46,7 +46,7 @@ from .const import (
 class HourlySensorConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle an Hourly Sensor config flow."""
 
-    VERSION = 2
+    VERSION = 3
 
     @staticmethod
     @callback
