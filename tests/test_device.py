@@ -1,16 +1,19 @@
-"""Tests for Hourly Sensor source-device metadata."""
+"""Tests for Hourly Sensor device metadata."""
 
 from types import SimpleNamespace
 
 from custom_components.hourly_sensor import device
 
 
-def test_generated_entities_use_source_device(monkeypatch) -> None:
-    """The source device identifiers and connections are reused."""
+def _entry() -> SimpleNamespace:
+    return SimpleNamespace(entry_id="entry-id", title="Hourly rain")
+
+
+def test_integration_device_is_linked_to_source_device(monkeypatch) -> None:
+    """A dedicated integration device points to the physical source device."""
     source_entry = SimpleNamespace(device_id="source-device")
     source_device = SimpleNamespace(
         identifiers={("weather_station", "outdoor")},
-        connections={("mac", "00:11:22:33:44:55")},
     )
     entity_registry = SimpleNamespace(
         async_get=lambda entity_id: (
@@ -25,22 +28,25 @@ def test_generated_entities_use_source_device(monkeypatch) -> None:
     monkeypatch.setattr(device.er, "async_get", lambda hass: entity_registry)
     monkeypatch.setattr(device.dr, "async_get", lambda hass: device_registry)
 
-    device_info = device.device_info_for_source(
-        SimpleNamespace(), "sensor.outdoor_rain"
+    device_info = device.device_info_for_entry(
+        SimpleNamespace(), _entry(), "sensor.outdoor_rain"
     )
 
-    assert device_info is not None
-    assert device_info["identifiers"] == {("weather_station", "outdoor")}
-    assert device_info["connections"] == {("mac", "00:11:22:33:44:55")}
+    assert device_info["identifiers"] == {("hourly_sensor", "entry-id")}
+    assert device_info["name"] == "Hourly rain"
+    assert device_info["via_device"] == ("weather_station", "outdoor")
 
 
-def test_source_without_device_leaves_entities_unassigned(monkeypatch) -> None:
-    """A source without a device does not create a misleading virtual one."""
+def test_source_without_device_keeps_integration_device(monkeypatch) -> None:
+    """A helper source still gets a device on the integration page."""
     entity_registry = SimpleNamespace(
         async_get=lambda entity_id: SimpleNamespace(device_id=None)
     )
     monkeypatch.setattr(device.er, "async_get", lambda hass: entity_registry)
 
-    assert (
-        device.device_info_for_source(SimpleNamespace(), "sensor.helper") is None
+    device_info = device.device_info_for_entry(
+        SimpleNamespace(), _entry(), "sensor.helper"
     )
+
+    assert device_info["identifiers"] == {("hourly_sensor", "entry-id")}
+    assert "via_device" not in device_info

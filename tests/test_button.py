@@ -30,13 +30,13 @@ def test_button_forces_controller_recalculation() -> None:
     assert button.icon == "mdi:history"
 
 
-def test_button_belongs_to_source_device(monkeypatch) -> None:
-    """The control is grouped on the monitored sensor's physical device."""
-    source_device_info = {"identifiers": {("weather_station", "outdoor")}}
+def test_button_belongs_to_linked_integration_device(monkeypatch) -> None:
+    """The control is grouped on its integration device linked to the source."""
+    integration_device_info = {"identifiers": {("hourly_sensor", "entry-id")}}
     monkeypatch.setattr(
         button_platform,
-        "device_info_for_source",
-        lambda hass, source_entity: source_device_info,
+        "device_info_for_entry",
+        lambda hass, entry, source_entity: integration_device_info,
     )
     entry = SimpleNamespace(
         entry_id="entry-id",
@@ -48,4 +48,4 @@ def test_button_belongs_to_source_device(monkeypatch) -> None:
 
     button = HourlySensorRecalculateButton(SimpleNamespace(), entry)
 
-    assert button.device_info == source_device_info
+    assert button.device_info == integration_device_info

@@ -25,7 +25,7 @@ from .const import (
     DEFAULT_PRECISION,
     DEFAULT_SOURCE_TYPE,
 )
-from .device import device_info_for_source
+from .device import device_info_for_entry
 
 
 async def async_setup_entry(
@@ -55,7 +55,7 @@ class HourlySensorEntity(SensorEntity):
         self._attr_unique_id = entry.entry_id
         self._attr_suggested_display_precision = self._precision
 
-        self._attr_device_info = device_info_for_source(hass, self._source_entity)
+        self._attr_device_info = device_info_for_entry(hass, entry, self._source_entity)
 
     async def async_added_to_hass(self) -> None:
         """Subscribe to controller updates."""

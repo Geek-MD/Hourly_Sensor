@@ -9,7 +9,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import HourlySensorConfigEntry
 from .const import CONF_SOURCE_ENTITY
-from .device import device_info_for_source
+from .device import device_info_for_entry
 
 
 async def async_setup_entry(
@@ -34,8 +34,8 @@ class HourlySensorRecalculateButton(ButtonEntity):
         self._controller = entry.runtime_data.controller
         self._attr_unique_id = f"{entry.entry_id}_recalculate"
         config = {**entry.data, **entry.options}
-        self._attr_device_info = device_info_for_source(
-            hass, config[CONF_SOURCE_ENTITY]
+        self._attr_device_info = device_info_for_entry(
+            hass, entry, config[CONF_SOURCE_ENTITY]
         )
 
     async def async_press(self) -> None:
