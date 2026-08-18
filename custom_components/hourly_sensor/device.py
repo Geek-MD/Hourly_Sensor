@@ -1,27 +1,23 @@
-"""Resolve the physical device shared by Hourly Sensor entities."""
+"""Attach Hourly Sensor entities to their source entity's device."""
 
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.device_registry import DeviceInfo
 
 
-def device_info_for_source(
-    hass: HomeAssistant, source_entity: str
-) -> DeviceInfo | None:
-    """Return identifiers that attach generated entities to the source device."""
-    source_entry = er.async_get(hass).async_get(source_entity)
-    if source_entry is None or source_entry.device_id is None:
-        return None
+def attach_entity_to_source_device(
+    hass: HomeAssistant, entity_id: str, source_entity: str
+) -> None:
+    """Move an entity registry entry onto the source entity's existing device.
 
-    source_device = dr.async_get(hass).async_get(source_entry.device_id)
-    if source_device is None:
-        return None
+    Updating the entity registry directly is intentional. Supplying ``device_info``
+    would make Home Assistant register the source device against this config entry,
+    causing an Hourly Sensor entry to be presented as a device integration.
+    """
+    registry = er.async_get(hass)
+    source_entry = registry.async_get(source_entity)
+    generated_entry = registry.async_get(entity_id)
+    if source_entry is None or generated_entry is None:
+        return
 
-    # Reusing the source device's stable identifiers/connections makes Home
-    # Assistant place the generated sensor and button on that existing device.
-    # Its device-level area assignment is therefore inherited automatically.
-    return DeviceInfo(
-        identifiers=source_device.identifiers,
-        connections=source_device.connections,
-    )
+    if generated_entry.device_id != source_entry.device_id:
+        registry.async_update_entity(entity_id, device_id=source_entry.device_id)

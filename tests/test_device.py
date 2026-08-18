@@ -1,46 +1,62 @@
-"""Tests for Hourly Sensor source-device metadata."""
+"""Tests for Hourly Sensor source-device association."""
 
 from types import SimpleNamespace
 
 from custom_components.hourly_sensor import device
 
 
-def test_generated_entities_use_source_device(monkeypatch) -> None:
-    """The source device identifiers and connections are reused."""
-    source_entry = SimpleNamespace(device_id="source-device")
-    source_device = SimpleNamespace(
-        identifiers={("weather_station", "outdoor")},
-        connections={("mac", "00:11:22:33:44:55")},
-    )
+def test_generated_entity_is_moved_to_source_device(monkeypatch) -> None:
+    """The entity registry relation is updated without registering a device."""
+    entries = {
+        "sensor.outdoor_rain": SimpleNamespace(device_id="source-device"),
+        "sensor.hourly_rain": SimpleNamespace(device_id=None),
+    }
+    updates: list[tuple[str, str | None]] = []
     entity_registry = SimpleNamespace(
-        async_get=lambda entity_id: (
-            source_entry if entity_id == "sensor.outdoor_rain" else None
-        )
-    )
-    device_registry = SimpleNamespace(
-        async_get=lambda device_id: (
-            source_device if device_id == "source-device" else None
-        )
-    )
-    monkeypatch.setattr(device.er, "async_get", lambda hass: entity_registry)
-    monkeypatch.setattr(device.dr, "async_get", lambda hass: device_registry)
-
-    device_info = device.device_info_for_source(
-        SimpleNamespace(), "sensor.outdoor_rain"
-    )
-
-    assert device_info is not None
-    assert device_info["identifiers"] == {("weather_station", "outdoor")}
-    assert device_info["connections"] == {("mac", "00:11:22:33:44:55")}
-
-
-def test_source_without_device_leaves_entities_unassigned(monkeypatch) -> None:
-    """A source without a device does not create a misleading virtual one."""
-    entity_registry = SimpleNamespace(
-        async_get=lambda entity_id: SimpleNamespace(device_id=None)
+        async_get=lambda entity_id: entries.get(entity_id),
+        async_update_entity=lambda entity_id, **changes: updates.append(
+            (entity_id, changes["device_id"])
+        ),
     )
     monkeypatch.setattr(device.er, "async_get", lambda hass: entity_registry)
 
-    assert (
-        device.device_info_for_source(SimpleNamespace(), "sensor.helper") is None
+    device.attach_entity_to_source_device(
+        SimpleNamespace(), "sensor.hourly_rain", "sensor.outdoor_rain"
+    )
+
+    assert updates == [("sensor.hourly_rain", "source-device")]
+
+
+def test_source_without_device_leaves_entity_unassigned(monkeypatch) -> None:
+    """A helper source makes the generated entity device-less too."""
+    entries = {
+        "sensor.helper": SimpleNamespace(device_id=None),
+        "sensor.hourly_helper": SimpleNamespace(device_id="old-device"),
+    }
+    updates: list[tuple[str, str | None]] = []
+    entity_registry = SimpleNamespace(
+        async_get=lambda entity_id: entries.get(entity_id),
+        async_update_entity=lambda entity_id, **changes: updates.append(
+            (entity_id, changes["device_id"])
+        ),
+    )
+    monkeypatch.setattr(device.er, "async_get", lambda hass: entity_registry)
+
+    device.attach_entity_to_source_device(
+        SimpleNamespace(), "sensor.hourly_helper", "sensor.helper"
+    )
+
+    assert updates == [("sensor.hourly_helper", None)]
+
+
+def test_missing_registry_entry_is_ignored(monkeypatch) -> None:
+    """Setup tolerates a source entity that has no registry entry."""
+    entity_registry = SimpleNamespace(
+        async_get=lambda entity_id: None,
+        async_update_entity=lambda *args, **kwargs: None,
+    )
+    monkeypatch.setattr(device.er, "async_get", lambda hass: entity_registry)
+
+    device.attach_entity_to_source_device(
+        SimpleNamespace(), "sensor.hourly_helper", "sensor.missing"
     )
