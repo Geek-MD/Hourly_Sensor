@@ -4,8 +4,8 @@ import json
 from pathlib import Path
 
 
-def test_manifest_exposes_config_entries_as_an_integration() -> None:
-    """Ensure configured sensors remain reachable from Integrations."""
+def test_manifest_exposes_config_entries_as_devices() -> None:
+    """Ensure configured sensors are categorized as devices."""
     manifest_path = (
         Path(__file__).parents[1]
         / "custom_components"
@@ -16,5 +16,5 @@ def test_manifest_exposes_config_entries_as_an_integration() -> None:
 
     assert manifest["config_flow"] is True
     assert manifest["after_dependencies"] == ["recorder"]
-    assert manifest["integration_type"] == "service"
-    assert manifest["version"] == "0.3.0"
+    assert manifest["integration_type"] == "device"
+    assert manifest["version"] == "0.3.1"

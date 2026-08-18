@@ -5,6 +5,7 @@ from __future__ import annotations
 from homeassistant.components.button import ButtonEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device import async_entity_id_to_device
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import HourlySensorConfigEntry
@@ -24,6 +25,7 @@ class HourlySensorRecalculateButton(ButtonEntity):
     """Force an hourly sensor to rebuild itself from Recorder history."""
 
     _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.CONFIG
     _attr_icon = "mdi:history"
     _attr_translation_key = "recalculate"
 
