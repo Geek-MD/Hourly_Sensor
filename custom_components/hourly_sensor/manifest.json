@@ -9,9 +9,9 @@
   ],
   "config_flow": true,
   "documentation": "https://github.com/Geek-MD/Hourly_Sensor",
-  "integration_type": "service",
+  "integration_type": "device",
   "iot_class": "calculated",
   "issue_tracker": "https://github.com/Geek-MD/Hourly_Sensor/issues",
   "requirements": [],
-  "version": "0.3.0"
+  "version": "0.3.1"
 }

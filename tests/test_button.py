@@ -2,6 +2,8 @@
 
 import asyncio
 
+from homeassistant.helpers.entity import EntityCategory
+
 from custom_components.hourly_sensor.button import HourlySensorRecalculateButton
 
 
@@ -21,5 +23,6 @@ def test_button_forces_controller_recalculation() -> None:
     asyncio.run(button.async_press())
 
     assert pressed == 1
+    assert button.entity_category is EntityCategory.CONFIG
     assert button.translation_key == "recalculate"
     assert button.icon == "mdi:history"
