@@ -25,7 +25,7 @@ from .const import (
     DEFAULT_PRECISION,
     DEFAULT_SOURCE_TYPE,
 )
-from .device import device_info_for_entry
+from .device import device_info_for_source
 
 
 async def async_setup_entry(
@@ -55,9 +55,7 @@ class HourlySensorEntity(SensorEntity):
         self._attr_unique_id = entry.entry_id
         self._attr_suggested_display_precision = self._precision
 
-        # A config entry is a virtual device whose summary groups the result and
-        # its recalculation control.
-        self._attr_device_info = device_info_for_entry(entry)
+        self._attr_device_info = device_info_for_source(hass, self._source_entity)
 
     async def async_added_to_hass(self) -> None:
         """Subscribe to controller updates."""
