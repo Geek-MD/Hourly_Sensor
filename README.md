@@ -23,6 +23,8 @@ updated on the hour and keeps only the requested number of completed clock hours
 ## ✨ Features
 
 - Create any number of hourly sensors from the Home Assistant UI.
+- Recalculate each hourly sensor on demand from its source entity's Recorder
+  history using the button created alongside it.
 - Monitor any numeric `sensor` entity.
 - Automatically distinguishes instantaneous sensors from cumulative meters by
   their Home Assistant `state_class`, with an explicit override for incomplete
@@ -86,6 +88,87 @@ Home Assistant's Recorder after creation or a source change. This makes already
 recorded changes (such as rain accumulated since a midnight reset) available
 without waiting for another complete hour. The source entity must not be excluded
 from Recorder for this backfill to be available.
+
+Every configured hourly sensor also creates a **Recalculate from history** button.
+Press it to discard the active internal window and rebuild it from the numeric
+states currently available in Recorder. If Recorder has no usable source history,
+the existing calculation is preserved.
+
+### Configuration examples
+
+Hourly Sensor is configured entirely from the UI; the following tables show the
+values to select in the creation form for several common use cases. Replace the
+example source entity with the entity available in your Home Assistant instance.
+
+#### Rain accumulated during the last 24 completed hours
+
+Use this configuration when the rain gauge is a cumulative counter with
+`state_class: total` or `total_increasing`:
+
+| Option | Example value |
+|--------|---------------|
+| Name | `Rain — last 24 hours` |
+| Source sensor | `sensor.rain_gauge_total` |
+| Data type | **Automatic** |
+| Statistic | **Change** |
+| Rolling window | `24` |
+| Decimal places | `2` |
+
+Automatic mode identifies the source as cumulative. Hourly Sensor sums positive
+reading differences and handles a counter that returns to zero.
+
+#### Average temperature during the last 12 completed hours
+
+| Option | Example value |
+|--------|---------------|
+| Name | `Outdoor temperature — 12-hour average` |
+| Source sensor | `sensor.outdoor_temperature` |
+| Data type | **Automatic** |
+| Statistic | **Average** |
+| Rolling window | `12` |
+| Decimal places | `1` |
+
+Temperature normally has `state_class: measurement`, so Automatic mode treats it
+as instantaneous and applies the selected Average statistic to all recorded
+samples in the completed-hour window.
+
+#### Sum of individual hourly reports
+
+Use **Sum** only when every source state is an individual quantity that should be
+added, rather than a continuously increasing meter:
+
+| Option | Example value |
+|--------|---------------|
+| Name | `Production reports — last 6 hours` |
+| Source sensor | `sensor.production_report` |
+| Data type | **Instantaneous** |
+| Statistic | **Sum** |
+| Rolling window | `6` |
+| Decimal places | `0` |
+
+Do not use this setup for an energy, water, or rain total: summing every reading
+from a cumulative meter would count the same accumulated quantity repeatedly.
+
+#### Cumulative meter with missing or incorrect metadata
+
+If a water or energy meter does not publish a reliable `state_class`, override
+automatic detection explicitly:
+
+| Option | Example value |
+|--------|---------------|
+| Name | `Water consumption — last 7 days` |
+| Source sensor | `sensor.water_meter` |
+| Data type | **Cumulative** |
+| Statistic | **Change** |
+| Rolling window | `168` |
+| Decimal places | `3` |
+
+The explicit Cumulative type always uses positive differences and reset handling,
+regardless of the statistic shown in a previously saved configuration.
+
+For an instantaneous sensor, select **Minimum**, **Maximum**, or **Last** instead
+of Average when you need the lowest sample, highest sample, or latest sample from
+the selected completed-hour window.
 
 ### Statistics
 

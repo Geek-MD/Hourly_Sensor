@@ -17,4 +17,4 @@ def test_manifest_exposes_config_entries_as_an_integration() -> None:
     assert manifest["config_flow"] is True
     assert manifest["after_dependencies"] == ["recorder"]
     assert manifest["integration_type"] == "service"
-    assert manifest["version"] == "0.2.2"
+    assert manifest["version"] == "0.3.0"

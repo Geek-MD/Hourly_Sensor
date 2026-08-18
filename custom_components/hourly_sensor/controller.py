@@ -109,10 +109,21 @@ class HourlySensorController:
 
     async def _async_restore_history(self, now: datetime) -> None:
         """Rebuild a cumulative window from Recorder when data is available."""
+        await self._async_rebuild_history(now)
+
+    async def async_recalculate(self) -> bool:
+        """Force a recalculation using the source entity's Recorder history."""
+        rebuilt = await self._async_rebuild_history(dt_util.now())
+        if rebuilt:
+            self._updated()
+        return rebuilt
+
+    async def _async_rebuild_history(self, now: datetime) -> bool:
+        """Replace the active window with numeric states stored by Recorder."""
         try:
             recorder = get_instance(self.hass)
         except KeyError:
-            return
+            return False
 
         start = hour_start(now) - timedelta(hours=self.accumulator.window_hours)
         states = await recorder.async_add_executor_job(
@@ -127,7 +138,12 @@ class HourlySensorController:
             self.accumulator.window_hours, self.accumulator.aggregation
         )
         if self._add_historical_states(historical_states, rebuilt):
+            current_value = self._numeric_state()
+            if current_value is not None:
+                rebuilt.add_sample(now, current_value)
             self.accumulator = rebuilt
+            return True
+        return False
 
     def _add_historical_states(
         self,
