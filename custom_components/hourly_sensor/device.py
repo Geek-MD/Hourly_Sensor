@@ -1,40 +1,43 @@
-"""Attach Hourly Sensor entities to their source entity's device."""
+"""Resolve the device displayed for an Hourly Sensor config entry."""
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.device_registry import DeviceInfo
+
+from .const import DOMAIN
 
 
-def migrate_config_entry_devices(hass: HomeAssistant, config_entry_id: str) -> None:
-    """Remove devices claimed by an entry created before version 0.3.4.
+def device_info_for_source(
+    hass: HomeAssistant,
+    source_entity: str,
+    *,
+    entry_id: str,
+    entry_name: str,
+) -> DeviceInfo:
+    """Return device metadata matching HA Daily Counter's integration layout.
 
-    Older releases supplied ``device_info`` while adding the entities. Home
-    Assistant consequently associated the source device (and, in 0.3.2, a virtual
-    device) with the Hourly Sensor config entry. Removing that association once
-    lets the entry return to the entity-only model; the entity registry links are
-    restored separately when each platform is loaded.
+    A source backed by a device reuses that device's stable identifiers and
+    connections. Home Assistant then displays the physical device inside this
+    config entry and groups the generated sensor and button beneath it.
+
+    Sources without a device receive one virtual device for their config entry,
+    keeping the same expandable integration-entry layout in every case.
     """
-    registry = dr.async_get(hass)
-    for device_entry in dr.async_entries_for_config_entry(registry, config_entry_id):
-        registry.async_update_device(
-            device_entry.id, remove_config_entry_id=config_entry_id
-        )
+    source_entry = er.async_get(hass).async_get(source_entity)
+    if source_entry is not None and source_entry.device_id is not None:
+        source_device = dr.async_get(hass).async_get(source_entry.device_id)
+        if source_device is not None and (
+            source_device.identifiers or source_device.connections
+        ):
+            return DeviceInfo(
+                identifiers=set(source_device.identifiers),
+                connections=set(source_device.connections),
+            )
 
-
-def attach_entity_to_source_device(
-    hass: HomeAssistant, entity_id: str, source_entity: str
-) -> None:
-    """Move an entity registry entry onto the source entity's existing device.
-
-    Updating the entity registry directly is intentional. Supplying ``device_info``
-    would make Home Assistant register the source device against this config entry,
-    causing an Hourly Sensor entry to be presented as a device integration.
-    """
-    registry = er.async_get(hass)
-    source_entry = registry.async_get(source_entity)
-    generated_entry = registry.async_get(entity_id)
-    if source_entry is None or generated_entry is None:
-        return
-
-    if generated_entry.device_id != source_entry.device_id:
-        registry.async_update_entity(entity_id, device_id=source_entry.device_id)
+    return DeviceInfo(
+        identifiers={(DOMAIN, entry_id)},
+        name=entry_name,
+        manufacturer="Geek-MD",
+        model="Hourly Sensor",
+    )

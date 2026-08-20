@@ -17,4 +17,4 @@ def test_manifest_exposes_plain_config_entries() -> None:
     assert manifest["config_flow"] is True
     assert manifest["after_dependencies"] == ["recorder"]
     assert "integration_type" not in manifest
-    assert manifest["version"] == "0.3.5"
+    assert manifest["version"] == "0.3.6"
