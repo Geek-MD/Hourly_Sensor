@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 from homeassistant.helpers.entity import EntityCategory
 
+from custom_components.hourly_sensor import button as button_module
 from custom_components.hourly_sensor.button import HourlySensorRecalculateButton
 
 
@@ -29,17 +30,24 @@ def test_button_forces_controller_recalculation() -> None:
     assert button.icon == "mdi:history"
 
 
-def test_button_does_not_claim_source_device_for_config_entry() -> None:
-    """The control is initially device-less so the entry owns no device."""
+def test_button_exposes_source_device_in_config_entry(monkeypatch) -> None:
+    """The control uses the same device metadata as its paired sensor."""
+    monkeypatch.setattr(
+        button_module,
+        "device_info_for_source",
+        lambda hass, source, **kwargs: {
+            "identifiers": {("weather_station", "outdoor")}
+        },
+    )
     entry = SimpleNamespace(
         entry_id="entry-id",
         title="Hourly rain",
-        data={"source_entity": "sensor.source"},
+        data={"name": "Hourly rain", "source_entity": "sensor.source"},
         options={},
         runtime_data=SimpleNamespace(controller=object()),
     )
 
     button = HourlySensorRecalculateButton(SimpleNamespace(), entry)
 
-    assert button.device_info is None
+    assert button.device_info["identifiers"] == {("weather_station", "outdoor")}
     assert button._source_entity == "sensor.source"

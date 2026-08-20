@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 from typing import Any
 
+from custom_components.hourly_sensor import sensor as sensor_module
 from custom_components.hourly_sensor.sensor import HourlySensorEntity
 
 
@@ -93,8 +94,15 @@ def test_last_period_attribute_uses_configured_precision() -> None:
     assert entity.extra_state_attributes["last_period"] == 1.23
 
 
-def test_sensor_does_not_claim_source_device_for_config_entry() -> None:
-    """The result is initially device-less so the entry owns no device."""
+def test_sensor_exposes_source_device_in_config_entry(monkeypatch) -> None:
+    """The result supplies device metadata while the platform adds it."""
+    monkeypatch.setattr(
+        sensor_module,
+        "device_info_for_source",
+        lambda hass, source, **kwargs: {
+            "identifiers": {("weather_station", "outdoor")}
+        },
+    )
     entry = SimpleNamespace(
         entry_id="entry-id",
         title="Hourly rain",
@@ -108,5 +116,5 @@ def test_sensor_does_not_claim_source_device_for_config_entry() -> None:
 
     entity = HourlySensorEntity(SimpleNamespace(), entry)
 
-    assert entity.device_info is None
+    assert entity.device_info["identifiers"] == {("weather_station", "outdoor")}
     assert entity._source_entity == "sensor.source"

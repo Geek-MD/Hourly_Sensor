@@ -36,11 +36,10 @@ updated on the hour and keeps only the requested number of completed clock hours
 - Dynamically inherits the monitored sensor's unit of measurement, device class,
   and state class, including when the source loads after the helper.
 - Reports `0` instead of an unknown state until completed-hour data is available.
-- Shows every configuration as an integration entry rather than creating or
-  claiming a device for Hourly Sensor.
-- Associates the rolling sensor and recalculation button with the monitored
-  sensor's existing device, so both appear on its device page and automatically
-  follow its area assignment.
+- Shows every configuration as an expandable integration entry containing its
+  associated device, rolling sensor, and recalculation button.
+- Reuses the monitored sensor's existing device and area when available; a
+  dedicated virtual device preserves the same layout for device-less sources.
 - Persists internal hourly buckets across Home Assistant restarts.
 - Exposes `average`, `minimum`, and `maximum` attributes calculated from all
   intermediate samples in the active completed-hour window.
@@ -87,10 +86,9 @@ Hourly Sensor discards the stored buckets from the previous source and begins a
 new calculation using the current reading of the newly selected entity; values
 from two different entities are never mixed.
 
-When upgrading from version 0.3.2 or 0.3.3, existing configurations are migrated
-automatically. Their old Hourly Sensor device association is removed and their
-sensor and recalculation button are then attached to the current source entity's
-device, so configurations do not need to be deleted and recreated.
+Existing configurations are updated automatically. Their sensor and recalculation
+button appear beneath the monitored sensor's device inside each integration entry,
+so configurations do not need to be deleted and recreated.
 
 For cumulative sources, Hourly Sensor rebuilds the active rolling window from
 Home Assistant's Recorder after creation or a source change. This makes already
