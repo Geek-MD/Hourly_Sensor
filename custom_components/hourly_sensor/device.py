@@ -27,13 +27,15 @@ def device_info_for_source(
     source_entry = er.async_get(hass).async_get(source_entity)
     if source_entry is not None and source_entry.device_id is not None:
         source_device = dr.async_get(hass).async_get(source_entry.device_id)
-        if source_device is not None and (
+        if isinstance(source_device, dr.DeviceEntry) and (
             source_device.identifiers or source_device.connections
         ):
             return DeviceInfo(
                 identifiers=set(source_device.identifiers),
                 connections=set(source_device.connections),
             )
+        if source_device is not None and source_device.identifiers:
+            return DeviceInfo(identifiers=set(source_device.identifiers))
 
     return DeviceInfo(
         identifiers={(DOMAIN, entry_id)},
