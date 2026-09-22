@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   transient missing unit while the source integration is still loading.
 - Support Home Assistant child-device registry entries without accessing their
   unavailable connection metadata.
+- Use each configuration name only once in generated sensor IDs and friendly
+  names, and migrate IDs created with the duplicated suffix.
 
 ## [v0.3.6] - 2026-08-20
 
