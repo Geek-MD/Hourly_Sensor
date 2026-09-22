@@ -4,7 +4,10 @@ from types import SimpleNamespace
 from typing import Any
 
 from custom_components.hourly_sensor import sensor as sensor_module
-from custom_components.hourly_sensor.sensor import HourlySensorEntity
+from custom_components.hourly_sensor.sensor import (
+    HourlySensorEntity,
+    _migrate_duplicated_entity_id,
+)
 
 
 class _States:
@@ -22,6 +25,7 @@ class _States:
 def _entity(states: _States) -> HourlySensorEntity:
     entity = object.__new__(HourlySensorEntity)
     entity._source_entity = "sensor.source"
+    entity._controller = SimpleNamespace(source_metadata={})
     entity.hass = SimpleNamespace(states=states)
     return entity
 
@@ -73,6 +77,21 @@ def test_source_metadata_is_resolved_after_source_loads() -> None:
     assert entity.state_class == "measurement"
 
 
+def test_source_metadata_uses_persisted_values_during_startup() -> None:
+    """Recorder sees a stable unit before the source integration has loaded."""
+    states = _States()
+    entity = _entity(states)
+    entity._controller.source_metadata = {
+        "unit_of_measurement": "mm",
+        "device_class": "precipitation",
+        "state_class": "measurement",
+    }
+
+    assert entity.native_unit_of_measurement == "mm"
+    assert entity.device_class == "precipitation"
+    assert entity.state_class == "measurement"
+
+
 def test_last_period_attribute_uses_configured_precision() -> None:
     """The stable completed-period value is available to automations."""
     states = _States()
@@ -118,3 +137,56 @@ def test_sensor_exposes_source_device_in_config_entry(monkeypatch) -> None:
 
     assert entity.device_info["identifiers"] == {("weather_station", "outdoor")}
     assert entity._source_entity == "sensor.source"
+    assert entity.name == "Hourly rain"
+    assert not entity.has_entity_name
+
+
+def test_duplicated_entity_id_is_migrated(monkeypatch) -> None:
+    """An ID generated with the device and entity name is shortened once."""
+    updates: list[tuple[str, str]] = []
+    registry = SimpleNamespace(
+        async_get_entity_id=lambda domain, platform, unique_id: (
+            "sensor.terraza_precipitacion_ultima_hora_precipitacion_ultima_hora"
+        ),
+        async_get=lambda entity_id: None,
+        async_update_entity=lambda entity_id, **changes: updates.append(
+            (entity_id, changes["new_entity_id"])
+        ),
+    )
+    monkeypatch.setattr(sensor_module.er, "async_get", lambda hass: registry)
+    entry = SimpleNamespace(
+        entry_id="entry-id",
+        data={"name": "Precipitación Última Hora"},
+        options={},
+    )
+
+    _migrate_duplicated_entity_id(SimpleNamespace(), entry)
+
+    assert updates == [
+        (
+            "sensor.terraza_precipitacion_ultima_hora_precipitacion_ultima_hora",
+            "sensor.terraza_precipitacion_ultima_hora",
+        )
+    ]
+
+
+def test_duplicated_entity_id_is_not_migrated_when_target_exists(monkeypatch) -> None:
+    """A migration never takes an entity ID already used by another entity."""
+    updates: list[object] = []
+    registry = SimpleNamespace(
+        async_get_entity_id=lambda domain, platform, unique_id: (
+            "sensor.rain_12h_rain_12h"
+        ),
+        async_get=lambda entity_id: object(),
+        async_update_entity=lambda *args, **kwargs: updates.append((args, kwargs)),
+    )
+    monkeypatch.setattr(sensor_module.er, "async_get", lambda hass: registry)
+    entry = SimpleNamespace(
+        entry_id="entry-id",
+        data={"name": "Rain 12h"},
+        options={},
+    )
+
+    _migrate_duplicated_entity_id(SimpleNamespace(), entry)
+
+    assert updates == []
