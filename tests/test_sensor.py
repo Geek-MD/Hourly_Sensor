@@ -22,6 +22,7 @@ class _States:
 def _entity(states: _States) -> HourlySensorEntity:
     entity = object.__new__(HourlySensorEntity)
     entity._source_entity = "sensor.source"
+    entity._controller = SimpleNamespace(source_metadata={})
     entity.hass = SimpleNamespace(states=states)
     return entity
 
@@ -67,6 +68,21 @@ def test_source_metadata_is_resolved_after_source_loads() -> None:
             "state_class": "measurement",
         }
     )
+
+    assert entity.native_unit_of_measurement == "mm"
+    assert entity.device_class == "precipitation"
+    assert entity.state_class == "measurement"
+
+
+def test_source_metadata_uses_persisted_values_during_startup() -> None:
+    """Recorder sees a stable unit before the source integration has loaded."""
+    states = _States()
+    entity = _entity(states)
+    entity._controller.source_metadata = {
+        "unit_of_measurement": "mm",
+        "device_class": "precipitation",
+        "state_class": "measurement",
+    }
 
     assert entity.native_unit_of_measurement == "mm"
     assert entity.device_class == "precipitation"

@@ -73,6 +73,27 @@ def test_storage_from_another_data_type_is_not_restored() -> None:
     assert not controller._can_restore("sensor.source", SOURCE_TYPE_CUMULATIVE)
 
 
+def test_source_metadata_is_cached_without_erasing_missing_values() -> None:
+    """Temporary unavailable states cannot remove Recorder metadata."""
+    controller = object.__new__(HourlySensorController)
+    controller.source_metadata = {
+        "unit_of_measurement": "mm",
+        "device_class": "precipitation",
+    }
+    state = State(
+        "sensor.source",
+        "unavailable",
+        {"device_class": "precipitation", "state_class": "measurement"},
+    )
+
+    assert controller._refresh_source_metadata(state)
+    assert controller.source_metadata == {
+        "unit_of_measurement": "mm",
+        "device_class": "precipitation",
+        "state_class": "measurement",
+    }
+
+
 def test_recorder_history_rebuilds_changed_cumulative_source() -> None:
     """A source change retains cumulative growth already recorded in the window."""
     controller = object.__new__(HourlySensorController)

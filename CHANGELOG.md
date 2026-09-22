@@ -5,6 +5,13 @@ All notable changes to Hourly Sensor will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.7] - 2026-09-22
+
+### Fixed
+
+- Preserve source sensor metadata across restarts so Recorder never sees a
+  transient missing unit while the source integration is still loading.
+
 ## [v0.3.6] - 2026-08-20
 
 ### Changed

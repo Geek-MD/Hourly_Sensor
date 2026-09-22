@@ -133,6 +133,10 @@ class HourlySensorEntity(SensorEntity):
         return attributes
 
     def _source_attribute(self, attribute: str) -> Any:
-        """Return an attribute from the source state when it is available."""
+        """Return live source metadata, falling back to its persisted value."""
         source_state = self.hass.states.get(self._source_entity)
-        return None if source_state is None else source_state.attributes.get(attribute)
+        if source_state is not None:
+            value = source_state.attributes.get(attribute)
+            if value is not None:
+                return value
+        return self._controller.source_metadata.get(attribute)

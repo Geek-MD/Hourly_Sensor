@@ -35,6 +35,7 @@ from .model import HourlyAccumulator, hour_start
 _LOGGER = logging.getLogger(__name__)
 _STORAGE_VERSION = 1
 _SAVE_DELAY_SECONDS = 5
+_SOURCE_METADATA = ("unit_of_measurement", "device_class", "state_class")
 
 
 class HourlySensorController:
@@ -67,6 +68,7 @@ class HourlySensorController:
         )
         self._listeners: set[Callable[[], None]] = set()
         self._remove_callbacks: list[Callable[[], None]] = []
+        self.source_metadata: dict[str, Any] = {}
 
     async def async_initialize(self) -> None:
         """Restore data and start listeners."""
@@ -84,6 +86,9 @@ class HourlySensorController:
                     window_hours=self.accumulator.window_hours,
                     aggregation=self.accumulator.aggregation,
                 )
+                self.source_metadata = stored.get("source_metadata", {})
+
+        self._refresh_source_metadata()
 
         now = dt_util.now()
         # Stored data can be stale after an unclean shutdown and contains no
@@ -185,9 +190,12 @@ class HourlySensorController:
         new_state = event.data["new_state"]
         if new_state is None:
             return
+        metadata_changed = self._refresh_source_metadata(new_state)
         self._refresh_auto_source_type()
         value = self._parse_value(new_state.state)
         if value is None:
+            if metadata_changed:
+                self._updated()
             return
         self.accumulator.add_sample(dt_util.as_local(new_state.last_updated), value)
         self._updated()
@@ -206,6 +214,21 @@ class HourlySensorController:
     def _numeric_state(self) -> float | None:
         state = self.hass.states.get(self.source_entity)
         return None if state is None else self._parse_value(state.state)
+
+    def _refresh_source_metadata(self, state: State | None = None) -> bool:
+        """Cache stable source metadata for use during startup transitions."""
+        if state is None:
+            state = self.hass.states.get(self.source_entity)
+        if state is None:
+            return False
+
+        changed = False
+        for attribute in _SOURCE_METADATA:
+            value = state.attributes.get(attribute)
+            if value is not None and self.source_metadata.get(attribute) != value:
+                self.source_metadata[attribute] = value
+                changed = True
+        return changed
 
     def _resolve_source_type(self) -> str:
         """Resolve automatic mode from Home Assistant's state class metadata."""
@@ -233,6 +256,7 @@ class HourlySensorController:
         return {
             "source_entity": self.source_entity,
             "source_type": self.source_type,
+            "source_metadata": self.source_metadata,
             "accumulator": self.accumulator.as_dict(),
         }
 
