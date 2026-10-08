@@ -8,11 +8,15 @@ from custom_components.hourly_sensor.const import DOMAIN
 
 def test_config_entry_reuses_source_device(monkeypatch) -> None:
     """The source device is exposed inside the Hourly Sensor config entry."""
+    class FakeDeviceEntry:
+        """Device registry entry with identifiers and connections."""
+
+        def __init__(self) -> None:
+            self.identifiers = {("weather_station", "outdoor")}
+            self.connections = {("mac", "00:11:22:33:44:55")}
+
     source_entry = SimpleNamespace(device_id="source-device")
-    source_device = SimpleNamespace(
-        identifiers={("weather_station", "outdoor")},
-        connections={("mac", "00:11:22:33:44:55")},
-    )
+    source_device = FakeDeviceEntry()
     entity_registry = SimpleNamespace(
         async_get=lambda entity_id: (
             source_entry if entity_id == "sensor.outdoor_rain" else None
@@ -25,6 +29,7 @@ def test_config_entry_reuses_source_device(monkeypatch) -> None:
     )
     monkeypatch.setattr(device.er, "async_get", lambda hass: entity_registry)
     monkeypatch.setattr(device.dr, "async_get", lambda hass: device_registry)
+    monkeypatch.setattr(device.dr, "DeviceEntry", FakeDeviceEntry)
 
     device_info = device.device_info_for_source(
         SimpleNamespace(),
@@ -35,6 +40,26 @@ def test_config_entry_reuses_source_device(monkeypatch) -> None:
 
     assert device_info["identifiers"] == {("weather_station", "outdoor")}
     assert device_info["connections"] == {("mac", "00:11:22:33:44:55")}
+
+
+def test_config_entry_reuses_child_device_identifiers(monkeypatch) -> None:
+    """Child devices are reused without accessing unsupported connections."""
+    source_entry = SimpleNamespace(device_id="child-device")
+    source_device = SimpleNamespace(identifiers={("weather_station", "channel-1")})
+    entity_registry = SimpleNamespace(async_get=lambda entity_id: source_entry)
+    device_registry = SimpleNamespace(async_get=lambda device_id: source_device)
+    monkeypatch.setattr(device.er, "async_get", lambda hass: entity_registry)
+    monkeypatch.setattr(device.dr, "async_get", lambda hass: device_registry)
+
+    device_info = device.device_info_for_source(
+        SimpleNamespace(),
+        "sensor.outdoor_rain",
+        entry_id="entry-id",
+        entry_name="Hourly rain",
+    )
+
+    assert device_info["identifiers"] == {("weather_station", "channel-1")}
+    assert "connections" not in device_info
 
 
 def test_source_without_device_uses_config_entry_device(monkeypatch) -> None:

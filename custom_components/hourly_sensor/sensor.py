@@ -5,12 +5,17 @@ from __future__ import annotations
 from typing import Any, cast
 
 from homeassistant.components.sensor import (
+    DOMAIN as SENSOR_DOMAIN,
+)
+from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
     SensorStateClass,
 )
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.util import slugify
 
 from . import HourlySensorConfigEntry
 from .const import (
@@ -24,6 +29,7 @@ from .const import (
     DEFAULT_HOURS,
     DEFAULT_PRECISION,
     DEFAULT_SOURCE_TYPE,
+    DOMAIN,
 )
 from .device import device_info_for_source
 
@@ -34,13 +40,37 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up the configured hourly sensor."""
+    _migrate_duplicated_entity_id(hass, entry)
     async_add_entities([HourlySensorEntity(hass, entry)])
+
+
+def _migrate_duplicated_entity_id(
+    hass: HomeAssistant, entry: HourlySensorConfigEntry
+) -> None:
+    """Remove the duplicated entity-name suffix created by earlier releases."""
+    registry = er.async_get(hass)
+    entity_id = registry.async_get_entity_id(SENSOR_DOMAIN, DOMAIN, entry.entry_id)
+    if entity_id is None:
+        return
+
+    config = {**entry.data, **entry.options}
+    name_slug = slugify(config[CONF_NAME])
+    duplicated_suffix = f"_{name_slug}_{name_slug}"
+    if not name_slug or not entity_id.endswith(duplicated_suffix):
+        return
+
+    new_entity_id = entity_id[: -len(f"_{name_slug}")]
+    if registry.async_get(new_entity_id) is None:
+        registry.async_update_entity(entity_id, new_entity_id=new_entity_id)
 
 
 class HourlySensorEntity(SensorEntity):
     """Rolling statistic over completed clock hours."""
 
-    _attr_has_entity_name = True
+    # The configured name is already the complete display name. Treating it as
+    # an entity name would prepend the device name and duplicate it for virtual
+    # devices, while using no entity name would hide it on physical devices.
+    _attr_has_entity_name = False
 
     def __init__(self, hass: HomeAssistant, entry: HourlySensorConfigEntry) -> None:
         """Initialize the sensor."""
@@ -133,6 +163,10 @@ class HourlySensorEntity(SensorEntity):
         return attributes
 
     def _source_attribute(self, attribute: str) -> Any:
-        """Return an attribute from the source state when it is available."""
+        """Return live source metadata, falling back to its persisted value."""
         source_state = self.hass.states.get(self._source_entity)
-        return None if source_state is None else source_state.attributes.get(attribute)
+        if source_state is not None:
+            value = source_state.attributes.get(attribute)
+            if value is not None:
+                return value
+        return self._controller.source_metadata.get(attribute)

@@ -37,6 +37,8 @@ def device_info_for_source(
                 identifiers=set(source_device.identifiers),
                 connections=set(connections),
             )
+        if source_device is not None and source_device.identifiers:
+            return DeviceInfo(identifiers=set(source_device.identifiers))
 
     return DeviceInfo(
         identifiers={(DOMAIN, entry_id)},
