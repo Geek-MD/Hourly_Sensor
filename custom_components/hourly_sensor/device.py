@@ -27,18 +27,23 @@ def device_info_for_source(
     source_entry = er.async_get(hass).async_get(source_entity)
     if source_entry is not None and source_entry.device_id is not None:
         source_device = dr.async_get(hass).async_get(source_entry.device_id)
-        connections: set[tuple[str, str]] = (
-            getattr(source_device, "connections", set())
-            if source_device is not None
-            else set()
-        )
-        if source_device is not None and (source_device.identifiers or connections):
-            return DeviceInfo(
-                identifiers=set(source_device.identifiers),
-                connections=set(connections),
+        connections: set[tuple[str, str]] = set()
+        if isinstance(source_device, dr.DeviceEntry):
+            connections = set(source_device.connections)
+        elif source_device is not None:
+            # Test doubles and older registry entry implementations may expose
+            # connections as a regular instance attribute. Inspect the instance
+            # dictionary so ChildDeviceEntry.__getattr__ is never invoked.
+            connections = set(
+                getattr(source_device, "__dict__", {}).get("connections", ())
             )
-        if source_device is not None and source_device.identifiers:
-            return DeviceInfo(identifiers=set(source_device.identifiers))
+        if source_device is not None and (source_device.identifiers or connections):
+            device_info = DeviceInfo(
+                identifiers=set(source_device.identifiers),
+            )
+            if connections:
+                device_info["connections"] = connections
+            return device_info
 
     return DeviceInfo(
         identifiers={(DOMAIN, entry_id)},
