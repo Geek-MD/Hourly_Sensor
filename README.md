@@ -53,9 +53,12 @@ updated on the hour and keeps only the requested number of completed clock hours
 
 | Requirement | Minimum version |
 |-------------|-----------------|
-| Home Assistant | 2026.7.0 |
+| Home Assistant | 2026.9.0 |
 | HACS (optional) | 1.6.0 |
 | Python (development/CI) | 3.14.2 |
+
+Hourly Sensor uses Home Assistant's Probatio validation engine directly for its
+configuration and options schemas.
 
 ## 📦 Installation
 

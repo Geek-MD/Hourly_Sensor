@@ -5,6 +5,19 @@ All notable changes to Hourly Sensor will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.7] - 2026-10-08
+
+### Changed
+
+- Use Probatio directly for configuration and options schema validation.
+- Raise the minimum supported Home Assistant version to 2026.9.0, where
+  Probatio became Home Assistant's validation engine.
+
+### Fixed
+
+- Handle Home Assistant child-device registry entries without relying on
+  main-device-only connection metadata.
+
 ## [v0.3.6] - 2026-08-20
 
 ### Changed
