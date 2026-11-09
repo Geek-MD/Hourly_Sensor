@@ -4,13 +4,17 @@
   "after_dependencies": [
     "recorder"
   ],
+  "categories": [
+    "helpers.calculate_value"
+  ],
   "codeowners": [
     "@Geek-MD"
   ],
   "config_flow": true,
   "documentation": "https://github.com/Geek-MD/Hourly_Sensor",
+  "integration_type": "helper",
   "iot_class": "calculated",
   "issue_tracker": "https://github.com/Geek-MD/Hourly_Sensor/issues",
   "requirements": [],
-  "version": "0.3.8"
+  "version": "0.3.9"
 }

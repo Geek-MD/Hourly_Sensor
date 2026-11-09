@@ -5,6 +5,15 @@ All notable changes to Hourly Sensor will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.9] - 2026-11-09
+
+### Fixed
+- Corrected invalid multi-exception syntax in configuration and controller validation.
+- Build `DeviceInfo` through its supported dataclass API, compatible with Home Assistant 2026.11.
+
+### Changed
+- Added the helper category and integration type used by the Home Assistant 2026.11 Marketplace.
+
 ## [v0.3.8] - 2026-10-08
 
 ### Changed

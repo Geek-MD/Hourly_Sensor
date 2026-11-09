@@ -59,7 +59,7 @@ def test_config_entry_reuses_child_device_identifiers(monkeypatch) -> None:
     )
 
     assert device_info["identifiers"] == {("weather_station", "channel-1")}
-    assert "connections" not in device_info
+    assert device_info.connections == set()
 
 
 def test_source_without_device_uses_config_entry_device(monkeypatch) -> None:

@@ -38,12 +38,10 @@ def device_info_for_source(
                 getattr(source_device, "__dict__", {}).get("connections", ())
             )
         if source_device is not None and (source_device.identifiers or connections):
-            device_info = DeviceInfo(
+            return DeviceInfo(
                 identifiers=set(source_device.identifiers),
+                connections=connections,
             )
-            if connections:
-                device_info["connections"] = connections
-            return device_info
 
     return DeviceInfo(
         identifiers={(DOMAIN, entry_id)},
