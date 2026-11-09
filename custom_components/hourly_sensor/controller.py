@@ -273,6 +273,6 @@ class HourlySensorController:
             return None
         try:
             return float(raw)
-        except TypeError, ValueError:
+        except (TypeError, ValueError):
             _LOGGER.debug("Ignoring non-numeric source state: %s", raw)
             return None

@@ -67,7 +67,7 @@ class HourlySensorConfigFlow(ConfigFlow, domain=DOMAIN):
             else:
                 try:
                     float(state.state)
-                except TypeError, ValueError:
+                except (TypeError, ValueError):
                     errors[CONF_SOURCE_ENTITY] = "source_not_numeric"
 
             if not errors:
@@ -101,7 +101,7 @@ class HourlySensorOptionsFlow(OptionsFlowWithReload):
             else:
                 try:
                     float(state.state)
-                except TypeError, ValueError:
+                except (TypeError, ValueError):
                     errors[CONF_SOURCE_ENTITY] = "source_not_numeric"
             if not errors:
                 user_input[CONF_HOURS] = int(user_input[CONF_HOURS])

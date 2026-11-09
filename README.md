@@ -20,6 +20,8 @@
 statistics from one or more numeric sensor entities. Each configured sensor is
 updated on the hour and keeps only the requested number of completed clock hours.
 
+Version **0.3.9** fixes configuration validation and `DeviceInfo` construction for Home Assistant 2026.11, and adds Marketplace classification metadata.
+
 ## ✨ Features
 
 - Create any number of hourly sensors from the Home Assistant UI.
